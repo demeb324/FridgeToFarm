@@ -44,34 +44,34 @@ of his monthly costs, so he's really interested in a software that can help keep
 - Sven was recommended 3 different recipes based on his image.
   **Interaction Flow (cook the meal from the saved recipe):**
 - Sven logs in
-- Sven shows her the general menu, option to upload the image, her top recipes, friends tab, and saved recipes tab
+- Website shows him the general menu, option to upload the image, her top recipes, friends tab, and saved recipes tab
 - Sven clicks on saved recipes
-- Website shows her a page with all her saved recipes
-- Natalie clicks on one of the recipe
-- Website shows her the recipe
-- Natalie cooks the recipe and when she is done she clicks "I made it"
-- Website brings her back to her home page
-- Natalie logs out
+- Website shows him a page with all his saved recipes
+- Sven clicks on one of the recipe
+- Website shows him the recipe
+- Sven cooks the recipe and when she is done she clicks "I made it"
+- Website brings him back to his home page
+- Sven logs out
 
 ## **Interaction Flow (Natalie wants to see what her friend is making today):**
-- Natalie logs in
-- Website shows her the general menu, option to upload the image, her top recipes, friends tab, and saved recipes tab
-- Natalie clicks on "Friends"
-- Website shows her a page where she can Add a Friend and see her friends
-- Natalie clicks on "My Friends"
-- Website shows her a page where she can see all her friends
+- Sven logs in
+- Website shows him the general menu, option to upload the image, her top recipes, friends tab, and saved recipes tab
+- Sven clicks on "Friends"
+- Website shows him a page where he can Add a Friend and see his friends
+- Sven clicks on "My Friends"
+- Website shows him a page where he can see all his friends
 - Natalie searches for a friend and clicks on their profile to see what they are cooking today
 - Website shows Natalie's friend page where is also a section "Last cooked recipes"
 - Natalie clicks on one of the recipes
-- Website shows her the recipe
-- Natalie follows the instructions to cook the meal and when Natalie is done she clicks on "I made it"
-- Website brings Natalie to her home page
-- Natalie logs out
+- Website shows him the recipe
+- Natalie follows the instructions to cook the meal and when Sven is done he clicks on "I made it"
+- Website brings Natalie to his home page
+- Sven logs out
 
 ## **Interaction Flow (Natalie wants to change her password):**
-- Natalie logs in
-- Website shows her the general menu, option to upload the image, her top recipes, friends tab, and saved recipes tab
-- Natalie hover our "Account" and from the dropdown menu she clicks on "Settings"
+- Sven logs in
+- Website shows him the general menu, option to upload the image, his top recipes, friends tab, and saved recipes tab
+- Svens hover our "Account" and from the dropdown menu she clicks on "Settings"
 - Website shows her a page with all the possible settings options
 - Natalie scrolls down to the "Change Password" section, she enters her current password, new password, and confirms her new password. She clicks "Save changes"
 - Website gives her confirmation that the password was updated
