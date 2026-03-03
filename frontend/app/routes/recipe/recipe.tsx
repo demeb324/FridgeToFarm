@@ -132,33 +132,12 @@ export default function Recipe(): Element {
 
 
             {/* REVIEWS */}
-            <div style={{ marginBottom: 32 }}>
-                <h2>Reviews ({recipe.reviewCount})</h2>
-                <form onSubmit={handleSubmit}>
-                    <p><strong>My Rating</strong></p>
-                    <div style={{ marginBottom: 8 }}>
-                        {[1,2,3,4,5].map((n) => (
-                            <span
-                                key={n}
-                                style={{ fontSize: 22, cursor: "pointer" }}
-                                onClick={() => setSelectedStar(n)}
-                            >
-                {n <= selectedStar ? "★" : "☆"}
-              </span>
-                        ))}
-                    </div>
-                    <p><strong>My Review</strong></p>
-                    <textarea
-                        rows={5}
-                        style={{ width: "100%", marginBottom: 8 }}
-                        placeholder="What did you think about this recipe? Did you make any changes or notes?"
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                    />
-                    <br />
-                    <button type="submit">Submit</button>
-                </form>
-            </div>
+            {/*this is the code from the hole section Martin to copy and paste for the top and bottom */}
+            <section className="mt-16">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                    {recipes.map(recipe => <RecipeCard recipe={recipe}/>)}
+                </div>
+            </section>
 
         </div>
     );
