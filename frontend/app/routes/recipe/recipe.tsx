@@ -1,6 +1,4 @@
-import {RecipeCard} from "~/components/recipeCard";
 import { useState } from "react";
-type Recipe = { image: string, name: string, stars: number }
 
 const recipe = {
     title: "Sarah's Easy Shredded Chicken Taco Filling",
@@ -36,21 +34,25 @@ export default function Recipe(): Element {
         e.preventDefault();
         alert(`Rating: ${selectedStar} stars\nReview: ${reviewText}`);
     };
-    const allRecipes: Recipe[] = [
-        {image: "/image400.png", name: "Recipe name this recipe is amazing", stars: 4},
-]
-    const recipes = allRecipes.slice(0, 8)
+
     return (
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: 20, fontFamily: "sans-serif" }}>
 
             {/* view in home page section 2 */}
             <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+                <div style={{ width: 120, height: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    Picture
+                </div>
                 <div>
-                    <section className="mt-16">
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
-                            {recipes.map(recipe => <RecipeCard recipe={recipe}/>)}
-                        </div>
-                    </section>
+                    <h1 style={{ fontSize: 20, margin: "0 0 8px" }}>{recipe.title}</h1>
+                    <div>
+                        {[1,2,3,4,5].map((n) => (
+                            <span key={n}>{n <= Math.round(recipe.rating) ? "★" : "☆"}</span>
+                        ))}
+                        <span> {recipe.rating} &nbsp; {recipe.ratingCount.toLocaleString()} Ratings</span>
+                    </div>
+                    <p>{recipe.reviewCount} Reviews</p>
+                    <p>{recipe.photoCount} Photos</p>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                         <button>Save</button>
                         <button>Rate</button>
