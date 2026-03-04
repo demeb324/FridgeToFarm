@@ -4,7 +4,8 @@ export default [
     layout('layouts/main.tsx', [
     index("routes/home/home.tsx"),
     route("/recipe", "routes/recipe/recipe.tsx"),
-    route('/meals','routes/meals/meals.tsx')
+    route('/meals','routes/meals/meals.tsx'),
+    route("friends", "routes/friends/friends.tsx"),
     ])
 ] satisfies RouteConfig
 
