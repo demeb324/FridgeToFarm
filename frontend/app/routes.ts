@@ -7,6 +7,7 @@ export default [
     route('/meals','routes/meals/meals.tsx'),
     route('/login', 'routes/login-newaccount/login.tsx'),
     route('/friends', 'routes/friends/friends.tsx'),
+        route('/items-list', 'routes/items-list-page/items-list.tsx'),
     ])
 ] satisfies RouteConfig
 
