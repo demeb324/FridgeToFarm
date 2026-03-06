@@ -53,11 +53,11 @@ export default function allFriends () {
                 </div>
             </section>
 
-            <h2 className="mx-16 mt-16 mb-8 font-bold text-3xl">Requests:</h2>
+            <h2 className="mx-16 mt-16 mb-8 font-bold text-3xl text-center">Requests:</h2>
 
 
             <section className="my-16">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                <div className="flex justify-center gap-16 flex-wrap">
                     {friendsrequest.map(friendreq => <FriendRequestCard friend={friendreq}/>)}
                 </div>
             </section>
