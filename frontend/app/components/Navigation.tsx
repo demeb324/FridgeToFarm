@@ -21,7 +21,7 @@ export function Navigation() {
                 <NavbarLink href="/meals">Meals</NavbarLink>
                 <NavbarLink href="/login">Login/New Account</NavbarLink>
                 <NavbarLink href="/allfriends">Friends</NavbarLink>
-                <NavbarLink href="#">Saved Recipes</NavbarLink>
+                <NavbarLink href="/saved-recipes">Saved Recipes</NavbarLink>
                 <Dropdown arrowIcon={true}
                           inline
                           label={
