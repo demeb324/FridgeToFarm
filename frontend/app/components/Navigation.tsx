@@ -17,10 +17,10 @@ export function Navigation() {
             </NavbarBrand>
             <NavbarToggle />
             <NavbarCollapse>
-                <NavbarLink href="/recipe">Recipes</NavbarLink>
+                {/*<NavbarLink href="/recipe">Recipes</NavbarLink>*/}
                 <NavbarLink href="/meals">Meals</NavbarLink>
                 <NavbarLink href="/login">Login/New Account</NavbarLink>
-                <NavbarLink href="/friends">Friends</NavbarLink>
+                <NavbarLink href="/allfriends">Friends</NavbarLink>
                 <NavbarLink href="#">Saved Recipes</NavbarLink>
                 <Dropdown arrowIcon={true}
                           inline

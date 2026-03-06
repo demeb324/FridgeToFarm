@@ -52,19 +52,19 @@ return (
             <li>cucumber</li>
         </ul>
         <div className="mx-16">
-        <form className="pr-96">
-            <select id="items"
-                    className="mt-4 block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
-                <option selected>Choose an item</option>
-                <option value="milk">milk</option>
-                <option value="CA">beer</option>
-                <option value="FR">swiss cheese</option>
-                <option value="DE">brats</option>
-            </select>
-        </form>
-        <button type="button"
-                className="mt-6 text-white bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">Add
-        </button>
+            <form className="pr-96">
+                <select id="items"
+                        className="mt-4 block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
+                    <option selected>Choose an item</option>
+                    <option value="milk">milk</option>
+                    <option value="CA">beer</option>
+                    <option value="FR">swiss cheese</option>
+                    <option value="DE">brats</option>
+                </select>
+            </form>
+            <button type="button"
+                    className="mt-6 text-white bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">Add
+            </button>
         </div>
         <h2 className="mx-16 mb-4 mt-8 font-bold text-2xl">
             What type of meal do you want to eat?
