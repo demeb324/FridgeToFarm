@@ -27,20 +27,16 @@ export default function allFriends () {
     return (
 
         <div className=''>
-            {/*<div className="flex gap-4 p-4 mx-16 my-8" >*/}
-            {/*    <Link className="underline text-xl px-4" to="/friends/add">Add Friend</Link>*/}
-            {/*    <Link className="underline text-xl px-4" to="/friends/my-friends">My Friends</Link>*/}
-            {/*</div>*/}
-
             <div>
-                <p className="font-semibold">Add Friends by Email:</p>
+                <h2 className="my-8 mx-16 font-bold text-3xl">Search New Friend:</h2>
                 <AddFriend />
             </div>
 
-            <div className="relative my-8 mx-16 pr-80"  >
+            <div className="relative my-8 mx-16 pr-80">
                 <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 
                 </div>
+                <h2 className="my-8 font-bold text-3xl">Search My Friends:</h2>
                 <input type="text" id="input-group-1"
                        className="block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
                        placeholder="Search Friend"/>
@@ -61,8 +57,8 @@ export default function allFriends () {
             <h2 className="mx-16 mt-16 mb-8 font-bold text-3xl text-center">Requests:</h2>
 
 
-            <section className="my-16">
-                <div className="flex justify-center gap-16 flex-wrap">
+            <section className="my-16 mx-16">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
                     {friendsrequest.map(friendreq => <FriendRequestCard friend={friendreq}/>)}
                 </div>
             </section>
