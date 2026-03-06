@@ -25,12 +25,17 @@ export default function allFriends () {
     const friends = allfriends.slice(0, 8)
     const friendsrequest = friendrequest.slice(0, 8)
     return (
-        <div className=''>
-            <div className="flex gap-4 p-4 mx-16 my-8" >
-                <Link className="underline text-xl px-4" to="/friends/add">Add Friend</Link>
-                <Link className="underline text-xl px-4" to="/friends/my-friends">My Friends</Link>
-            </div>
 
+        <div className=''>
+            {/*<div className="flex gap-4 p-4 mx-16 my-8" >*/}
+            {/*    <Link className="underline text-xl px-4" to="/friends/add">Add Friend</Link>*/}
+            {/*    <Link className="underline text-xl px-4" to="/friends/my-friends">My Friends</Link>*/}
+            {/*</div>*/}
+
+            <div>
+                <p className="font-semibold">Add Friends by Email:</p>
+                <AddFriend />
+            </div>
 
             <div className="relative my-8 mx-16 pr-80"  >
                 <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
