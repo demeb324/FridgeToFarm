@@ -10,11 +10,8 @@ export default [
     route('/accountset', 'routes/account/accountset.tsx'),
     route('/items-list', 'routes/items-list-page/items-list.tsx'),
     route("/allfriends", "routes/friends/allfriends.tsx"),
-<<<<<<< HEAD
     route('/saved-recipes', 'routes/recipe/saved-recipes.tsx'),
-=======
     route("/friendprofile", "routes/friends/friendprofile.tsx"),
->>>>>>> friendprofile
 
     ])
 ] satisfies RouteConfig
