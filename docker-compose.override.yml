@@ -1,0 +1,9 @@
+# Ports are defined here because we only want to open them
+# for the development build.
+services:
+  sql:
+    ports:
+      - '54321:5432'
+  backend:
+    ports:
+      - '8080:4200'
