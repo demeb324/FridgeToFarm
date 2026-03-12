@@ -1,21 +1,21 @@
 create table if not exists "user"
 (
     id uuid not null primary key,
-    activation_token varchar(16) not null,
+    activation_token char(32) not null,
     avatar_url varchar(256),
+    bio varchar(256),
     created_at timestamptz,
-    favorite_bio varchar(256),
-    profile_email varchar(128) not null unique,
-    profile_hash varchar(16) not null,
+    email varchar(128) not null unique,
+    hash char(97) not null,
     username varchar(32) not null unique
 );
 
 create table if not exists friend
 (
-    requestor_id uuid not null references "user"(id),
     requestee_id uuid not null references "user"(id),
+    requestor_id uuid not null references "user"(id),
     accepted boolean,
-    PRIMARY KEY (requestor_id, requestee_id)
+    PRIMARY KEY (requestee_id, requestor_id)
 );
 create index on friend(requestor_id);
 create index on friend(requestee_id);
