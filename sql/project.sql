@@ -1,3 +1,8 @@
+drop table review;
+drop table friend;
+drop table recipe;
+drop table "user";
+
 create table if not exists "user"
 (
     id uuid not null primary key,
