@@ -1,8 +1,8 @@
 import * as argon2 from 'argon2'
-import { sign } from 'jsonwebtoken'
+import pkg from 'jsonwebtoken';
 import * as crypto from 'crypto'
 
-
+const { sign } = pkg
 
 export function generateJwt (payload: object, signature: string): string {
     const setExpInSecondsSinceEpoch = (currentTimestamp: number): number => {

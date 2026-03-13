@@ -40,7 +40,7 @@ export type PublicUser = z.infer<typeof PublicUserSchema>
 export async function insertUser(user: PrivateUser): Promise<string> {
   PrivateUserSchema.parse(user)
   const {id, activationToken, avatarUrl,  bio, email, hash, username} = user
-  await sql`INSERT INTO user(id, activation_token, avatar_url, bio, email, hash, username) VALUES (${id} , ${activationToken}, ${avatarUrl}, ${bio} ${email}, ${hash}, ${username})`
+  await sql`INSERT INTO "user"(id, activation_token, avatar_url, bio, email, hash, username) VALUES (${id} , ${activationToken}, ${avatarUrl}, ${bio}, ${email}, ${hash}, ${username})`
   return 'User Successfully Created'
 }
 

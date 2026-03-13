@@ -8,7 +8,7 @@ const router = Router()
 
 router.route('/').post(signupUserController)
 
-router.route('/activation/:activation').get(activationController)
+// router.route('/activation/:activation').get(activationController)
 
 export const signUpRoute = { basePath, router }
 

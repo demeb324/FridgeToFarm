@@ -4,7 +4,7 @@ import {PrivateUserSchema} from "../user/user.model.ts";
 
 export const SignUpUserSchema = PrivateUserSchema
 
-    .omit({ hash: true, activationToken: true, avatarUrl: true, bio: true})
+    .omit({ hash: true, activationToken: true, avatarUrl: true, bio: true, createdAt: true })
 
     .extend ({
         passwordConfirm: z.string('password confirmation is required')
