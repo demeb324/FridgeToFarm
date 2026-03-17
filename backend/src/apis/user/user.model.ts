@@ -1,5 +1,6 @@
 import { z } from 'zod/v4'
 import {sql} from '../../utils/database.utils.ts';
+import {userInfo} from "os";
 
 export const PrivateUserSchema = z.object({
   id: z.uuidv7('Please provide a valid uuid for id'),
@@ -14,7 +15,7 @@ export const PrivateUserSchema = z.object({
         .max(512, 'please provide a valid bio (max 512 characters)' )
         .trim()
         .nullable(),
-   createdAt: z.iso.datetime('please provide a valid date')
+   createdAt: z.date('please provide a valid date')
        .nullable(),
     email: z
         .email('please provide a valid email')
@@ -40,17 +41,17 @@ export type PublicUser = z.infer<typeof PublicUserSchema>
 export async function insertUser(user: PrivateUser): Promise<string> {
   PrivateUserSchema.parse(user)
   const {id, activationToken, avatarUrl,  bio, email, hash, username} = user
-  await sql`INSERT INTO "user"(id, activation_token, avatar_url, bio, email, hash, username) VALUES (${id} , ${activationToken}, ${avatarUrl}, ${bio}, ${email}, ${hash}, ${username})`
+  await sql`INSERT INTO "user"(id, activation_token, avatar_url, bio, created_at, email, hash, username) VALUES (${id}, ${activationToken}, ${avatarUrl}, ${bio}, now(), ${email}, ${hash}, ${username})`
   return 'User Successfully Created'
 }
 
-// export async function selectPrivateUserByUserActivationToken (activationToken: string): Promise<PrivateUSer|null> {
-//
-//   const rowList = await sql`SELECT id, activation_token, avatar_url, bio, email, hash, username FROM user WHERE activation_token = ${activationToken}`
-//   const result = PrivateUserSchema.array().max(1).parse(rowList)
-//   return result[0] ?? null
-// }
-//
+export async function selectUserByActivationToken (activationToken: string): Promise<PrivateUser|null> {
+
+  const rowList = await sql`SELECT id, activation_token, avatar_url, bio, created_at, email, hash, username FROM "user" WHERE activation_token = ${activationToken}`
+  const result = PrivateUserSchema.array().max(1).parse(rowList)
+  return result[0] ?? null
+}
+
 // export async function selectPublicUserByUserId (id: string): Promise<PublicUser | null> {
 //
 //   // create a prepared statement that selects the profile by id and execute the statement
@@ -62,11 +63,11 @@ export async function insertUser(user: PrivateUser): Promise<string> {
 //   // return the profile or null if no profile was found
 //   return  result[0] ?? null
 // }
-//
+
 // export async function selectPublicUserByUserName(name: string): Promise<PublicUser | null> {
 //
 //   // create a prepared statement that selects the profile by name and execute the statement
-//   const rowList = await sql`SELECT id, about, image_url, name FROM profile WHERE name = ${name}`
+//   const rowList = await sql`SELECT id, about, image_url, name FROM "user" WHERE name = ${name}`
 //
 //   // enforce that the result is an array of one profile, or null
 //   const result = PublicUserSchema.array().max(1).parse(rowList)
@@ -74,3 +75,55 @@ export async function insertUser(user: PrivateUser): Promise<string> {
 //   // return the profile or null if no profile was found
 //   return result[0] ?? null
 // }
+//
+export async function updateUser (user: PrivateUser): Promise<string> {
+  const { id, activationToken, avatarUrl, bio, createdAt, email, hash, username } = user
+  await sql `UPDATE "user" SET activation_token = ${activationToken}, avatar_url = ${avatarUrl}, bio = ${bio}, created_at = ${createdAt}, email = ${email}, hash = ${hash}, username = ${username} WHERE id = ${id}`
+  return 'Profile successfully updated'
+}
+//
+// export async function selectPrivateUserbyUserEmail (email: string): Promise<PrivateUser | null> {
+//   // create a prepared statement that selects the user by email and execute the statement
+//   const rowList = await sql`SELECT id, about, activation_token, email, hash image_url, name FROM "user" WHERE email = ${email}`
+//
+//   // enforce tha the result is an array of one user, or null
+//   const result = PrivateUserSchema.array().max(1).parse(rowList)
+//
+//   // return the user or null if no profile was found
+//   return result[0] ?? null
+// }
+//
+// export async function selectPublicUserbyUserId (id: string): Promise<PublicUser | null> {
+//   // create a prepared statement that selects the user by id and execute the statement
+//   const rowList = await sql`SELECT id, about, image_url, name FROM "user" WHERE id = ${id}`
+//
+//   // enforce that the result is an array of one profile, or null
+//   const result = PublicUserSchema.array().max(1).parse(rowList)
+//
+//   // return the user or null if no user was found
+//   return result[0] ?? null
+// }
+//
+// export async function selectPublicUserByUserName (name: string): Promise<PublicUser | null> {
+//   // create a prepared statement that selects the profile by name and executes the statement
+//   const rowList = await sql`SELECT id, about, image_url, name FROM "user" WHERE name = ${name}`
+//
+//   // enforce that the result is an array of one user, or null
+//   const result = PublicUserSchema.array().max(1).parse(rowList)
+//
+//   // return the user or null if no profile was found
+//   return result[0] ?? null
+// }
+//
+// export async function selectPublicUserByUserName (name: string): Promise<PublicUser[]> {
+//   // format name to include wildcars
+//   const nameWithWildcards = `%${name}%`
+//
+//   // create a prepared statement that selects users by name and execute the statement
+//   const rowList = await sql`SELECT id, about, image_url, name FROM "user" WHERE name LIKE ${nameWithWildcards}`
+//
+//   return PublicUserSchema.array().parse(rowList)
+// }
+
+
+
