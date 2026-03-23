@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import {
     getRecipeByCuisineController,
-    getRecipeByIdController, getRecipesByUserIdController,
+    getRecipeByIdController, getRecipesByIngredientController, getRecipesByUserIdController,
     postRecipeController,
 
 } from './recipe.controller.ts'
@@ -21,6 +21,9 @@ router.route('/userId/:userId')
 
 router.route('/cuisine-and-meal-category/:cuisine/:mealCategory')
     .get(getRecipeByCuisineController)
+
+router.route('/ingredient/:ingredient')
+    .get(getRecipesByIngredientController)
 
 export const recipeRoute = { basePath, router }
 

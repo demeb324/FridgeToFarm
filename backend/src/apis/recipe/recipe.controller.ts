@@ -3,11 +3,13 @@ import {type Request, response, type Response} from 'express'
 import {
     type Recipe,
     insertRecipe,
-    recipeSchema, selectRecipeById, selectRecipesByUserId, selectRecipeByCuisineAndMealCategory
+    recipeSchema, selectRecipeById, selectRecipesByUserId, selectRecipeByCuisineAndMealCategory,
+    selectRecipesByIngredient
 } from './recipe.model.ts'
 import {serverErrorResponse, zodErrorResponse} from "../../utils/response.utils.ts";
 import type {Status} from "../../utils/interfaces/Status.ts";
 import {request} from "node:http";
+import {z} from "zod/v4";
 
 
 export async function postRecipeController(request: Request, response: Response): Promise<void> {
@@ -95,3 +97,25 @@ export async function getRecipeByCuisineController(request: Request, response: R
     }
 }
 
+
+export async function getRecipesByIngredientController(request: Request, response: Response): Promise<void> {
+
+    try {
+        const schema=z.object({ingredient:z.string('Please provide a valid ingredient')})
+        const validationResult = schema.safeParse( request.params)
+        console.log (request.params.ingredient)
+        if (!validationResult.success) {
+
+            return
+        }
+        const {ingredient} = validationResult.data
+
+        // get the recipe
+        const recipes: Recipe[] = await selectRecipesByIngredient(ingredient.trim())
+
+        response.json({status: 200, message: null, data: recipes})
+    } catch (error: any) {
+        console.error(error)
+        serverErrorResponse(response, error.message)
+    }
+}
