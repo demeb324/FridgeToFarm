@@ -81,15 +81,10 @@ export async function selectRecipeByCuisineAndMealCategory(cuisine: string, meal
         FROM recipe
         WHERE LOWER(cuisine) = LOWER(${cuisine}) AND LOWER(meal_category) = LOWER(${mealCategory})`
 
-    // Parse JSONB columns from database (postgres library returns them as objects)
-    const parsedRows = rowList.map((row: any) => ({
-        ...row,
-        instructions: JSON.parse(row.instructions),
-        ingredients: JSON.parse(row.ingredients)
-    }))
+
 
     // Enforce that the result is an array of one recipe, or null
-    return recipeSchema.array().parse(parsedRows)
+    return recipeSchema.array().parse(rowList)
 }
 
 export async function selectRecipesByUserId(userId: string): Promise<Recipe[]> {
@@ -109,17 +104,13 @@ export async function selectRecipesByUserId(userId: string): Promise<Recipe[]> {
 
 }
 
-
 export async function selectRecipesByIngredient(ingredient: string): Promise<Recipe[]> {
-    console.log(ingredient)
+
     const searchBy = [{name: ingredient}]
     const rowList = await sql`SELECT id, user_id, calories, carbs, cook_time, cuisine, fat_content, image_url, instructions, ingredients, meal_category, prep_time, protein, servings, title, total_time
         FROM recipe
         WHERE ingredients @> ${sql.json(searchBy)}
         `
-       console.log('imadeithere')
-
-// Parse JSONB columns from database (postgres library returns them as objects)
 
 
     // Enforce that the result is an array of one recipe, or null
