@@ -5,13 +5,31 @@ import {type PrivateUser, PrivateUserSchema} from "../user/user.model.ts";
 export const friendSchema = z.object({
     requesteeId: z.uuidv7('Please provide a valid uuid for requestee id'),
     requestorId: z.uuidv7('Please provide a valid requestor id'),
-    accepted: z.boolean('please accept or reject the friend request' ),
+    accepted: z.boolean('please accept or reject the friend request' )
+        .nullable(),
 })
 
-export async function insertFriend (friend: Friend): Promise<string> {
-    friendSchema.parse({requesteeId, requestorId, accepted: false})
-    await sql`INSERT INTO friend (requestee_id, requestor_id, accepted) VALUES (${requesteeId}, ${requestorId}, false)`
-    return 'Friend Request Successfully Sent'
+export type Friend = z.infer<typeof friendSchema>
+
+export async function insertFriend(friend: Friend): Promise<string> {
+    friendSchema.parse(friend)
+
+    await sql`
+       INSERT INTO friend (requestee_id, requestor_id, accepted)
+       VALUES (${friend.requesteeId}, ${friend.requestorId}, false)`
+
+    return 'Friend request successfully sent'
+}
+
+export async function selectFriendByPrimaryKey (requesteeId: string, requestorId: string): Promise<Friend | null> {
+
+    const rowList = await sql`
+    SELECT requestee_id, requestor_id, accepted
+    FROM friend
+    WHERE requestor_id = ${requestorId} AND requestee_id = ${requesteeId}`
+
+    const result = friendSchema.array().max(1).parse(rowList)
+    return result[0] ?? null
 }
 
 // export async function findFriendByEmail (email: string): Promise<PrivateUser | null> {
