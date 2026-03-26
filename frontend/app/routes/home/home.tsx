@@ -2,8 +2,8 @@ import type { Route } from "../+types/home"
 import { FileInput, Label } from "flowbite-react";
 import {RecipeCard} from "~/components/recipeCard";
 import {getAllRecipes} from "../../utils/models/recipe.model";
-
-type Recipe = { image: string, name: string, stars: number }
+import {getRecipeReviews} from "~/utils/models/review.model";
+import type {Recipe} from "~/utils/models/recipe.model";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,19 +13,17 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader() {
-    const recipes= await getAllRecipes()
-    return {recipes}
-
-
+    const recipes: Recipe[]= await getAllRecipes()
+    const reviewsMap = await getRecipeReviews(recipes)
+    const reviews = Object.fromEntries(reviewsMap)
+    return {recipes, reviews}
 
 }
 
-
 export default function Home({loaderData}: Route.ComponentProps) {
-const {recipes} = loaderData
+const {recipes, reviews} = loaderData
     console.log(recipes)
-
-
+    console.log(reviews)
 
     return(
       <>
@@ -63,7 +61,7 @@ const {recipes} = loaderData
 
           <section className="mt-16">
               <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
-                  {recipes.map(recipe => <RecipeCard recipe={recipe}/>)}
+                  {recipes.map((recipe: Recipe) => <RecipeCard recipe={recipe} key={recipe.id} reviews={reviews[recipe.id]}/>)}
               </div>
           </section>
 

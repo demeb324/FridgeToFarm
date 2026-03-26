@@ -45,13 +45,16 @@ export const recipeSchema = z.object({
 })
 export type Recipe = z.infer<typeof recipeSchema>
 
-
 export async function getAllRecipes(): Promise<Recipe[]> {
     const url = new URL(`${process.env.REST_API_URL}/recipe`)
     const response = await fetch(url)
     if (!response.ok) throw new Error(`Failed to fetch recipes: ${response.statusText}`)
     const data = await response.json()
-    return data.data as Recipe[]
 
+    const recipes = data.data as Recipe[]
+
+
+
+    return recipes
 }
 
