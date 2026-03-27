@@ -13,6 +13,7 @@ export default [
         route("/allfriends", "routes/friends/allfriends.tsx"),
         route('/saved-recipes', 'routes/recipe/saved-recipes.tsx'),
         route("/friendprofile", "routes/friends/friendprofile.tsx"),
+        route("/sign-up", "routes/sign-up/sign-up.tsx")
 
 
     ])
