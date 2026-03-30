@@ -46,7 +46,7 @@ export async function signInController (request: Request, response: Response): P
 
         //if sign in was successful, create a new session for the client and return a response to the client
         //deconstruct the id, bio, avatar_url, and username from the User
-        const {id,bio,avatarUrl,username} = user
+        const {id,createdAt,bio,avatarUrl,username} = user
 
         //generate a new signature for the session
         const signature: string = uuid()
@@ -54,6 +54,7 @@ export async function signInController (request: Request, response: Response): P
         //generate a new jwt for the session using the id, bio, email, avatar_url, username and signature
         const authorization: string = generateJwt({
             id,
+            createdAt,
             bio,
             avatarUrl,
             username,

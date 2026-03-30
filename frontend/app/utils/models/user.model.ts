@@ -14,7 +14,7 @@ export const UserSchema = z.object({
         .max(512, 'please provide a valid bio (max 512 characters)' )
         .trim()
         .nullable(),
-    createdAt: z.date('please provide a valid date')
+    createdAt: z.coerce.date('please provide a valid date')
         .nullable(),
     username: z.string('Please provide a valid username')
         .trim()
@@ -27,7 +27,7 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>
 
 
-export const SignUpUserSchema = UserSchema
+export const SignUpUserBaseSchema = UserSchema
 
     .omit({ avatarUrl: true, bio: true, createdAt: true, id: true })
 
@@ -42,9 +42,11 @@ export const SignUpUserSchema = UserSchema
             .min(8, 'profile password cannot be less than 8 characters')
             .max(32, 'profile password cannot be over 32 characters')
     })
-    .refine(data => data.password === data.passwordConfirm, {
-        message: 'passwords do not match'
-    })
+
+export const SignUpUserSchema = SignUpUserBaseSchema.refine(data => data.password === data.passwordConfirm, {
+    message: 'passwords do not match'
+})
+
 
 
 export type SignUpUser = z.infer<typeof SignUpUserSchema>
