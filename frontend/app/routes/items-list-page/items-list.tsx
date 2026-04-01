@@ -3,6 +3,8 @@ import type { Route } from "./+types/items-list";
 import {fileStorage, getStorageKey} from "~/utils/image-storage.server";
 import {GoogleGenAI} from "@google/genai";
 import * as process from "node:process";
+import type {Recipe} from "~/utils/models/recipe.model";
+import {RecipeCard} from "~/components/recipeCard";
 
 export async function loader ({ params }:Route.LoaderArgs) {
     const storageKey = getStorageKey(params.id);
@@ -31,11 +33,15 @@ export async function loader ({ params }:Route.LoaderArgs) {
             { text: "please give us a list of ingredients from the image and list the results as a clean JSON array of ingredients" }
         ],
     });
-    console.log(result.candidates[0].content);
+    // console.log(result.candidates[0].content);
+    console.log(JSON.parse(result.text))
+    const ingredients = JSON.parse(result.text)
+    return {ingredients}
 }
 
-export default function ItemsList({params}:Route.LoaderArgs) {
-
+export default function ItemsList({params, loaderData}: Route.ComponentProps) {
+    const {ingredients} = loaderData
+    console.log(ingredients)
 return (
     <>
         <div className="flex w-full items-center justify-center">
@@ -45,12 +51,14 @@ return (
             List of items on the picture
         </h2>
         <div className="mx-16 text-left">
-            <ul className="list-none">
-                <li>chicken</li>
-                <li>tomatoes</li>
-                <li>onion</li>
-                <li>cheese</li>
-            </ul>
+            <section className="mt-4">
+                <div
+                    className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                    <ul className="mx-16 list-none">
+                    {ingredients.map((ingredient: string) => <li key={ingredient} className="text-lg">{ingredient}</li>)}
+                    </ul>
+                </div>
+            </section>
         </div>
         <h2 className="mx-16 mb-4 mt-8 font-bold text-2xl">
             Is this Everything? Add items:
