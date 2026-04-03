@@ -76,6 +76,7 @@ export async function action({request}: Route.ActionArgs): Promise<FormActionRes
 
         session.set('authorization', authorization)
         session.set('user', validationResult.data)
+        session.set('ingredients', {})
 
         const responseHeaders = new Headers()
         responseHeaders.append('Set-Cookie', await commitSession(session))

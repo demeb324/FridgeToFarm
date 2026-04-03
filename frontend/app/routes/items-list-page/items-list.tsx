@@ -4,53 +4,95 @@
 // import * as process from "node:process";
 // import {getAllRecipes, type Recipe} from "~/utils/models/recipe.model";
 // import {RecipeCard} from "~/components/recipeCard";
-import {data} from "react-router";
+import {data, redirect} from "react-router";
 import {getAllIngredients, type Ingredient} from "~/utils/models/ingredient.model";
 import type { Route } from "./+types/items-list";
+import {commitSession, getSession} from "~/utils/session.server";
+import {GoogleGenAI} from "@google/genai";
+import {fileStorage, getStorageKey} from "~/utils/image-storage.server";
+import {z} from "zod/v4";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {getValidatedFormData, useRemixForm} from "remix-hook-form";
 
-export async function loader ({ params }:Route.LoaderArgs) {
-    // const storageKey = getStorageKey(params.id);
-    // const file = await fileStorage.get(storageKey);
-    //
-    // if (!file) {
-    //     throw new Response("User avatar not found", {
-    //         status: 404,
-    //     });
-    // }
-    // const ai = new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
-    // const streamedFile = await file.arrayBuffer()
-    // const base64ImageData = Buffer.from(streamedFile).toString("base64");
-    // const result = await ai.models.generateContent({
-    //     model: "gemini-3-flash-preview",
-    //     config: {
-    //         responseMimeType: 'application/json'
-    //     },
-    //     contents: [
-    //         {
-    //             inlineData: {
-    //                 mimeType: 'image/jpeg',
-    //                 data: base64ImageData,
-    //             },
-    //         },
-    //         { text: "please give us a list of ingredients from the image and list the results as a clean JSON array of ingredients" }
-    //     ],
-    // });
-    // // console.log(result.candidates[0].content);
-    // console.log(JSON.parse(result.text))
-    // const ingredients = JSON.parse(result.text)
-
+export async function loader ({ params, request }:Route.LoaderArgs) {
+    const session = await getSession(request.headers.get("Cookie"))
+    if (!session.has("user") || !session.has("ingredients")) {
+        redirect('/login')
+    }
+    const ingredientsDictionary = session.get('ingredients')
+    if (!ingredientsDictionary) {
+        return redirect('/login')
+    }
     const ingredientsData: Ingredient[] = await getAllIngredients()
-    const ingredients: string[] = []
+    if (ingredientsDictionary[params.id]) {
+        return data({ingredients:ingredientsDictionary[params.id], ingredientsData},{
+
+            })
+    }
+    console.log(ingredientsDictionary[params.id])
+    // return data({ingredients:ingredientsDictionary[params.id], ingredientsData:[]},{
+
+    // })
+    console.log('Calling Gemini')
+    const storageKey = getStorageKey(params.id);
+    const file = await fileStorage.get(storageKey);
+
+    if (!file) {
+        throw new Response("User avatar not found", {
+            status: 404,
+        });
+    }
+    const ai = new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
+    const streamedFile = await file.arrayBuffer()
+    const base64ImageData = Buffer.from(streamedFile).toString("base64");
+    const result = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        config: {
+            responseMimeType: 'application/json'
+        },
+        contents: [
+            {
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64ImageData,
+                },
+            },
+            { text: "please give us a list of ingredients from the image and list the results as a clean JSON array of ingredients" }
+        ],
+    });
+    // console.log(result.candidates[0].content);
+    const resultText = result.text
+    if (resultText === undefined) {
+        throw new Response('Failed to get list of ingredients', {status:400})
+    }
+    console.log(JSON.parse(resultText))
+    const ingredients = JSON.parse(resultText)
+    ingredientsDictionary[params.id] = ingredients
+    session.set("ingredients", ingredientsDictionary)
+    const headers = new Headers()
+    headers.append("Set-Cookie", await commitSession(session))
     return data({ingredients, ingredientsData},{
-        headers: {
-            "content-type": "application/json",
-            "Cashe-controle": "public, max-age=10000"
-        }})
+    headers
+        })
+}
+
+const ItemsSchema = z.object({
+    itemsList:z.array(z.string('please provide a valid ingredient name').min(1, "Please provide valid item name")).min(1, "Must provide at leas one ingredient")
+})
+const resolver = zodResolver(ItemsSchema)
+
+type Items = z.infer<typeof ItemsSchema>
+export async function action({request}: Route.ActionArgs){
+    const {errors, data, receivedValues: defaultValues} = await getValidatedFormData<Items>(request, resolver)
+    if (errors) {
+        return {errors, defaultValues}
+    }
 }
 
 export default function ItemsList({params, loaderData}: Route.ComponentProps) {
     const {ingredients, ingredientsData} = loaderData
-    console.log(ingredients)
+    const defaultValue = {itemsList:ingredients}
+    const {register, control, handleSubmit} = useRemixForm<Items> ({resolver:zodResolver(resolver)})
 return (
     <>
         <div className="flex w-full items-center justify-center">
@@ -84,7 +126,7 @@ return (
                 <select id="items"
                         className="mt-4 block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body">
                     <option selected>Choose an item</option>
-                    {ingredientsData.map((ingredient) => <option value={ingredient.id}>{ingredient.nameIng}</option>)}
+                    {ingredientsData.map((ingredient) => <option key={ingredient.id} value={ingredient.id}>{ingredient.nameIng}</option>)}
                 </select>
             </form>
             <button type="button"

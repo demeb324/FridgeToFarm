@@ -5,6 +5,7 @@ import * as process from "node:process";
 type SessionData = {
     user: User
     authorization: string
+    ingredients: {[key:string]:string[]}
 }
 
 type SessionFlashData = {

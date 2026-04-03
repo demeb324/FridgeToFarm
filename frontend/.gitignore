@@ -25,3 +25,5 @@ project.env
 */yarn-error.log*
 
 .env.development
+
+**/._*.*

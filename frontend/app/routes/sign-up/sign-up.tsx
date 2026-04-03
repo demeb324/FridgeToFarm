@@ -24,7 +24,6 @@ const resolver = zodResolver(SignUpUserSchema)
 export async function action({request}: Route.ActionArgs): Promise<FormActionResponse> {
     const {errors, data, receivedValues: defaultValues} = await getValidatedFormData<SignUpUser>(request, resolver)
 
-
     if (errors) {
         return {errors, defaultValues}
     }
