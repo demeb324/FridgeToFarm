@@ -64,10 +64,9 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                         params.set('mealType', mealType)
                         ingredients.forEach(i => params.append('ingredients', i))
                         return (
-                            <Link
+                            <div
                                 key={recipe.title}
-                                to={`/ai-recipe?${params.toString()}`}
-                                className="border border-default-medium rounded-base p-6 flex flex-col gap-3 bg-neutral-secondary-medium hover:shadow-md transition-shadow"
+                                className="border border-default-medium rounded-base p-6 flex flex-col gap-3 bg-neutral-secondary-medium"
                             >
                                 <h3 className="font-semibold text-lg text-heading">{recipe.title}</h3>
                                 <p className="text-body text-sm">{recipe.description}</p>
@@ -88,7 +87,13 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                                         ))}
                                     </div>
                                 </div>
-                            </Link>
+                                <Link
+                                    to={`/ai-recipe?${params.toString()}`}
+                                    className="mt-auto text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm rounded-base px-4 py-2 text-center"
+                                >
+                                    Make this recipe
+                                </Link>
+                            </div>
                         )
                     })}
                 </div>
@@ -99,9 +104,15 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                 {dbRecipes.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center">
                         {dbRecipes.map((recipe: Recipe) => (
-                            <Link key={recipe.id} to={`/recipe/${recipe.id}`} className="hover:opacity-80 transition-opacity">
+                            <div key={recipe.id} className="flex flex-col items-center gap-3">
                                 <RecipeCard recipe={recipe} reviews={[]}/>
-                            </Link>
+                                <Link
+                                    to={`/recipe/${recipe.id}`}
+                                    className="text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm rounded-base px-4 py-2"
+                                >
+                                    Make this recipe
+                                </Link>
+                            </div>
                         ))}
                     </div>
                 ) : (
