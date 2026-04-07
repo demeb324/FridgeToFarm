@@ -21,7 +21,9 @@ export async function loader ({ params, request }:Route.LoaderArgs) {
     const ingredientsData: Ingredient[] = await getAllIngredients()
 
     if (ingredientsFromUrl.length > 0) {
-        return data({ ingredients: ingredientsFromUrl, ingredientsData })
+        const mealType = requestUrl.searchParams.get('mealType') ?? ''
+        const cuisine = requestUrl.searchParams.get('cuisine') ?? ''
+        return data({ ingredients: ingredientsFromUrl, ingredientsData, mealType, cuisine })
     }
 
     console.log('Calling Gemini')
@@ -65,7 +67,7 @@ type Items = z.infer<typeof ItemsSchema>
 
 
 export default function ItemsList({params, loaderData}: Route.ComponentProps) {
-    const {ingredients, ingredientsData} = loaderData
+    const {ingredients, ingredientsData, mealType, cuisine} = loaderData
 
     const navigate = useNavigate()
 
@@ -73,16 +75,19 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
         resolver,
         defaultValues: {
             ingredients: ingredients.map((name: string) => ({ value: name })),
-            mealType: '',
-            cuisine: '',
+            mealType,
+            cuisine,
         },
         submitHandlers: {
             onValid: (data) => {
-                const params = new URLSearchParams()
-                data.ingredients.forEach(i => params.append('ingredients', i.value))
-                params.set('mealType', data.mealType)
-                params.set('cuisine', data.cuisine)
-                navigate(`/recipe-generation?${params.toString()}`)
+                const confirmedParams = new URLSearchParams()
+                data.ingredients.forEach(i => confirmedParams.append('ingredients', i.value))
+                confirmedParams.set('mealType', data.mealType)
+                confirmedParams.set('cuisine', data.cuisine)
+                // Replace current history entry so Back restores confirmed state
+                navigate(`/items-list/${params.id}?${confirmedParams.toString()}`, { replace: true })
+                // Navigate forward to recipe generation
+                navigate(`/recipe-generation?${confirmedParams.toString()}`)
             }
         }
     })
