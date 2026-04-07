@@ -8,7 +8,12 @@ import {z} from "zod/v4";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useRemixForm} from "remix-hook-form";
 import {useFieldArray} from "react-hook-form";
-import {useState} from "react";
+import {useState, useEffect} from "react";
+
+// Prevent the loader from re-running when we update URL params reactively
+export function shouldRevalidate({ currentUrl, nextUrl }: Route.ShouldRevalidateFunctionArgs) {
+    return currentUrl.pathname !== nextUrl.pathname
+}
 
 export async function loader ({ params, request }:Route.LoaderArgs) {
     const session = await getSession(request.headers.get("Cookie"))
@@ -71,7 +76,7 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
 
     const navigate = useNavigate()
 
-    const { register, control, handleSubmit, formState: { errors } } = useRemixForm<Items>({
+    const { register, control, handleSubmit, watch, formState: { errors } } = useRemixForm<Items>({
         resolver,
         defaultValues: {
             ingredients: ingredients.map((name: string) => ({ value: name })),
@@ -84,14 +89,25 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                 data.ingredients.forEach(i => confirmedParams.append('ingredients', i.value))
                 confirmedParams.set('mealType', data.mealType)
                 confirmedParams.set('cuisine', data.cuisine)
-                // Replace current history entry so Back restores confirmed state
-                navigate(`/items-list/${params.id}?${confirmedParams.toString()}`, { replace: true })
-                // Navigate forward to recipe generation
                 navigate(`/recipe-generation?${confirmedParams.toString()}`)
             }
         }
     })
     const { fields, append, remove } = useFieldArray({ control, name: 'ingredients' })
+
+    // Keep the URL in sync with form state so browser Back restores the user's input
+    useEffect(() => {
+        const subscription = watch((values) => {
+            const { ingredients: ing, mealType: mt, cuisine: cu } = values
+            if (!ing?.length) return
+            const urlParams = new URLSearchParams()
+            ing.forEach(i => { if (i?.value) urlParams.append('ingredients', i.value) })
+            if (mt) urlParams.set('mealType', mt)
+            if (cu) urlParams.set('cuisine', cu)
+            navigate(`/items-list/${params.id}?${urlParams.toString()}`, { replace: true })
+        })
+        return () => subscription.unsubscribe()
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const [selectValue, setSelectValue] = useState('')
     const [freeText, setFreeText] = useState('')
