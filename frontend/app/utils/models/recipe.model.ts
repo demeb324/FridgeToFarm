@@ -45,6 +45,14 @@ export const recipeSchema = z.object({
 })
 export type Recipe = z.infer<typeof recipeSchema>
 
+export async function getRecipeById(id: string): Promise<Recipe | null> {
+    const url = new URL(`${process.env.REST_API_URL}/recipe/${encodeURIComponent(id)}`)
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Failed to fetch recipe: ${response.statusText}`)
+    const data = await response.json()
+    return data.data as Recipe ?? null
+}
+
 export async function getRecipesByCuisineAndMealCategory(
     cuisine: string,
     mealCategory: string

@@ -2,6 +2,7 @@ import {GoogleGenAI} from "@google/genai";
 import {getRecipesByCuisineAndMealCategory, type Recipe} from "~/utils/models/recipe.model";
 import type {Route} from "./+types/recipe-generation";
 import {RecipeCard} from "~/components/recipeCard";
+import {Link} from "react-router";
 
 type RecipeSuggestion = {
     title: string
@@ -38,11 +39,11 @@ export async function loader({request}: Route.LoaderArgs) {
         getRecipesByCuisineAndMealCategory(cuisine, mealType),
     ])
 
-    return {aiSuggestions, dbRecipes, mealType, cuisine}
+    return {aiSuggestions, dbRecipes, ingredients, mealType, cuisine}
 }
 
 export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
-    const {aiSuggestions, dbRecipes, mealType, cuisine} = loaderData
+    const {aiSuggestions, dbRecipes, ingredients, mealType, cuisine} = loaderData
 
     return (
         <>
@@ -56,32 +57,40 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
             <section className="mx-16 mb-16">
                 <h2 className="font-bold text-2xl mb-6">AI Suggested Recipes</h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-6">
-                    {aiSuggestions.map((recipe) => (
-                        <div
-                            key={recipe.title}
-                            className="border border-default-medium rounded-base p-6 flex flex-col gap-3 bg-neutral-secondary-medium"
-                        >
-                            <h3 className="font-semibold text-lg text-heading">{recipe.title}</h3>
-                            <p className="text-body text-sm">{recipe.description}</p>
-                            <div className="flex gap-4 text-sm text-body">
-                                <span>Prep: {recipe.prepTime}</span>
-                                <span>Cook: {recipe.cookTime}</span>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-body mb-1">Uses from your fridge:</p>
-                                <div className="flex flex-wrap gap-1">
-                                    {recipe.usedIngredients.map((ing) => (
-                                        <span
-                                            key={ing}
-                                            className="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5"
-                                        >
-                                            {ing}
-                                        </span>
-                                    ))}
+                    {aiSuggestions.map((recipe) => {
+                        const params = new URLSearchParams()
+                        params.set('title', recipe.title)
+                        params.set('cuisine', cuisine)
+                        params.set('mealType', mealType)
+                        ingredients.forEach(i => params.append('ingredients', i))
+                        return (
+                            <Link
+                                key={recipe.title}
+                                to={`/ai-recipe?${params.toString()}`}
+                                className="border border-default-medium rounded-base p-6 flex flex-col gap-3 bg-neutral-secondary-medium hover:shadow-md transition-shadow"
+                            >
+                                <h3 className="font-semibold text-lg text-heading">{recipe.title}</h3>
+                                <p className="text-body text-sm">{recipe.description}</p>
+                                <div className="flex gap-4 text-sm text-body">
+                                    <span>Prep: {recipe.prepTime}</span>
+                                    <span>Cook: {recipe.cookTime}</span>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
+                                <div>
+                                    <p className="text-xs font-medium text-body mb-1">Uses from your fridge:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {recipe.usedIngredients.map((ing) => (
+                                            <span
+                                                key={ing}
+                                                className="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5"
+                                            >
+                                                {ing}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </Link>
+                        )
+                    })}
                 </div>
             </section>
 
@@ -90,7 +99,9 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                 {dbRecipes.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center">
                         {dbRecipes.map((recipe: Recipe) => (
-                            <RecipeCard key={recipe.id} recipe={recipe} reviews={[]}/>
+                            <Link key={recipe.id} to={`/recipe/${recipe.id}`} className="hover:opacity-80 transition-opacity">
+                                <RecipeCard recipe={recipe} reviews={[]}/>
+                            </Link>
                         ))}
                     </div>
                 ) : (
