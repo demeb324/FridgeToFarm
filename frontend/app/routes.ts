@@ -11,6 +11,7 @@ export default [
         route('/friends', 'routes/friends/friends.tsx'),
         route('/accountset', 'routes/account/accountset.tsx'),
         route('/items-list/:id', 'routes/items-list-page/items-list.tsx'),
+        route('/recipe-generation', 'routes/recipe-generation/recipe-generation.tsx'),
         route("/allfriends", "routes/friends/allfriends.tsx"),
         route('/saved-recipes', 'routes/recipe/saved-recipes.tsx'),
         route("/friendprofile", "routes/friends/friendprofile.tsx"),
