@@ -11,6 +11,7 @@ import {signInRoute} from "./apis/sign-in/sign-in.route.ts";
 import {recipeRoute} from "./apis/recipe/recipe.route.ts";
 import {reviewRoute} from "./apis/review/review.route.ts";
 import {friendRoute} from "./apis/friend/friend.route.ts";
+import {ingredientRoute} from "./apis/ingredient/ingredient.route.ts";
 export class App {
     app: Application
     redisStore : RedisStore
@@ -47,6 +48,7 @@ export class App {
         this.app.use(recipeRoute.basePath, recipeRoute.router)
         this.app.use(reviewRoute.basepath, reviewRoute.router)
         this.app.use(friendRoute.basepath, friendRoute.router)
+        this.app.use(ingredientRoute.basepath, ingredientRoute.router)
     }
 
     // starts the server and tells the terminal to post a message that the server is running and on what port

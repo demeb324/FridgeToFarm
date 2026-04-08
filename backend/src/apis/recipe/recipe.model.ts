@@ -125,13 +125,6 @@ export async function selectAllRecipes(): Promise<Recipe[]> {
         FROM recipe
         `
 
-    // // Parse JSONB columns from database (postgres library returns them as objects)
-    // const parsedRows = rowList.map((row: any) => ({
-    //     ...row,
-    //     instructions: JSON.parse(row.instructions),
-    //     ingredients: JSON.parse(row.ingredients)
-    // }))
-
     // Enforce that the result is an array of one recipe, or null
     return recipeSchema.array().parse(rowList)
 

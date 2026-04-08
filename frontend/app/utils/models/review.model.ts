@@ -45,3 +45,34 @@ export async function getRecipeReviews(recipes: Recipe[]): Promise<Map<string, R
 
     return new Map(reviewResults.map(({ recipeId, reviews}) => [recipeId, reviews]))
 }
+
+export async function getReviewsByRecipeId(recipeId: string): Promise<Review[]> {
+    const response = await fetch(`${process.env.REST_API_URL}/review/recipeId/${recipeId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to fetch reviews for recipe ${recipeId}`)
+    }
+    const result: Status = await response.json()
+    return result.data as Review[]
+}
+
+export async function postReview(review: { recipeId: string, userId: string, body: string, rating: number, createdAt: null }, authorization: string, cookie: string): Promise<Status> {
+    const response = await fetch(`${process.env.REST_API_URL}/review`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authorization,
+            'Cookie': cookie
+        },
+        body: JSON.stringify(review)
+    })
+    return await response.json() as Status
+}
+
+export const ReviewFormSchema = z.object({
+    body: z.string().min(1, 'Please write a review').max(256, 'Review must be 256 characters or less'),
+    rating: z.coerce.number().int().min(1, 'Please select a rating').max(5, 'Rating must be 5 or less'),
+})

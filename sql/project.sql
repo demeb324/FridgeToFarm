@@ -2,6 +2,7 @@ drop table if exists review;
 drop table if exists friend;
 drop table if exists recipe;
 drop table if exists "user";
+drop table if exists ingredient;
 
 create table if not exists "user"
 (
@@ -57,3 +58,9 @@ create table if not exists review
 );
 create index on review(recipe_id);
 create index on review(user_id);
+
+create table if not exists ingredient
+(
+    id uuid not null,
+    name_ing varchar(32)
+);
