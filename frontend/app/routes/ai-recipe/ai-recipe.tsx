@@ -1,4 +1,8 @@
 import {GoogleGenAI} from "@google/genai";
+import {redirect, data, Form} from "react-router";
+import {v7 as uuid} from "uuid";
+import {postRecipe, type Recipe} from "~/utils/models/recipe.model";
+import {getSession} from "~/utils/session.server";
 import type {Route} from "./+types/ai-recipe";
 
 type FullAiRecipe = {
@@ -22,6 +26,9 @@ export async function loader({request}: Route.LoaderArgs) {
 
     if (!title) throw new Response("Recipe title is required", {status: 400})
 
+    const session = await getSession(request.headers.get("Cookie"))
+    const user = session.has("user") ? session.get("user") : null
+
     const ai = new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY})
     const result = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -44,11 +51,61 @@ Return a JSON object with these exact fields:
     })
 
     const recipe: FullAiRecipe = JSON.parse(result.text ?? '{}')
-    return {recipe}
+    return {recipe, user, cuisine, mealType}
 }
 
-export default function AiRecipe({loaderData}: Route.ComponentProps) {
-    const {recipe} = loaderData
+export async function action({request}: Route.ActionArgs) {
+    const session = await getSession(request.headers.get("Cookie"))
+    console.log('Save recipe action - session has user:', session.has("user"), 'cookie:', request.headers.get("Cookie")?.substring(0, 50))
+    if (!session.has("user")) {
+        return data({error: "Please log in to save a recipe"}, {status: 401})
+    }
+
+    const formData = await request.formData()
+    const recipeJson = formData.get('recipeJson') as string
+    const cuisine = formData.get('cuisine') as string
+    const mealType = formData.get('mealType') as string
+
+    const aiRecipe: FullAiRecipe = JSON.parse(recipeJson)
+    const user = session.get("user")!
+    const authorization = session.get("authorization")!
+    const cookie = request.headers.get("Cookie") ?? ''
+    const id = uuid()
+
+    const dbRecipe: Recipe = {
+        id,
+        userId: user.id,
+        title: aiRecipe.title,
+        calories: aiRecipe.nutrition.calories,
+        carbs: aiRecipe.nutrition.carbs,
+        fatContent: aiRecipe.nutrition.fat,
+        protein: aiRecipe.nutrition.protein,
+        cookTime: aiRecipe.cookTime,
+        prepTime: aiRecipe.prepTime,
+        totalTime: aiRecipe.totalTime,
+        servings: aiRecipe.servings,
+        cuisine: cuisine,
+        mealCategory: mealType,
+        imageUrl: null,
+        ingredients: aiRecipe.ingredients.map(ing => ({
+            name: ing.name,
+            amount: parseFloat(ing.amount) || 0,
+            units: ing.units
+        })),
+        instructions: aiRecipe.instructions
+    }
+
+    const result = await postRecipe(dbRecipe, authorization, cookie)
+
+    if (result.status !== 200) {
+        return data({error: result.message ?? "Failed to save recipe"})
+    }
+
+    return redirect(`/recipe/${id}`)
+}
+
+export default function AiRecipe({loaderData, actionData}: Route.ComponentProps) {
+    const {recipe, user, cuisine, mealType} = loaderData
 
     return (
         <div className="max-w-3xl mx-auto px-8 py-16 mb-28">
@@ -98,7 +155,7 @@ export default function AiRecipe({loaderData}: Route.ComponentProps) {
                 </ol>
             </section>
 
-            <section>
+            <section className="mb-10">
                 <h2 className="font-bold text-2xl mb-4">Nutrition Facts <span className="text-sm font-normal text-body">per serving</span></h2>
                 <div className="flex gap-8">
                     <div className="text-center">
@@ -119,6 +176,26 @@ export default function AiRecipe({loaderData}: Route.ComponentProps) {
                     </div>
                 </div>
             </section>
+
+            {actionData && 'error' in actionData && (
+                <p className="text-red-500 mb-4">{actionData.error}</p>
+            )}
+
+            {user ? (
+                <Form method="POST">
+                    <input type="hidden" name="recipeJson" value={JSON.stringify(recipe)} />
+                    <input type="hidden" name="cuisine" value={cuisine} />
+                    <input type="hidden" name="mealType" value={mealType} />
+                    <button
+                        type="submit"
+                        className="text-white bg-blue-600 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-6 py-3 focus:outline-none"
+                    >
+                        Save Recipe
+                    </button>
+                </Form>
+            ) : (
+                <p className="text-body italic">Log in to save this recipe and leave a review.</p>
+            )}
         </div>
     )
 }

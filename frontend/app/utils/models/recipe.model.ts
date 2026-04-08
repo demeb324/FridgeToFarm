@@ -1,5 +1,5 @@
-// 2️⃣ Array of objects with validation rules
 import {z} from "zod/v4";
+import type {Status} from "~/utils/interfaces/Status";
 
 const ingredientsArraySchema = z.array(
     z.object({
@@ -75,5 +75,18 @@ export async function getAllRecipes(): Promise<Recipe[]> {
 
 
     return recipes
+}
+
+export async function postRecipe(recipe: Recipe, authorization: string, cookie: string): Promise<Status> {
+    const response = await fetch(`${process.env.REST_API_URL}/recipe`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authorization,
+            'Cookie': cookie
+        },
+        body: JSON.stringify(recipe)
+    })
+    return await response.json() as Status
 }
 
