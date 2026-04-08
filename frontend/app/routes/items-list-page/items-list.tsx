@@ -18,7 +18,8 @@ export function shouldRevalidate({ currentUrl, nextUrl }: Route.ShouldRevalidate
 export async function loader ({ params, request }:Route.LoaderArgs) {
     const session = await getSession(request.headers.get("Cookie"))
     if (!session.has("user")) {
-        return redirect('/login')
+        const { pathname, search } = new URL(request.url)
+        return redirect(`/login?redirectTo=${encodeURIComponent(pathname + search)}`)
     }
 
     const requestUrl = new URL(request.url)
@@ -31,21 +32,23 @@ export async function loader ({ params, request }:Route.LoaderArgs) {
         return data({ ingredients: ingredientsFromUrl, ingredientsData, mealType, cuisine })
     }
 
-    console.log('Calling Gemini')
     const storageKey = getStorageKey(params.id);
+    console.log('[loader] looking up storage key:', storageKey)
     const file = await fileStorage.get(storageKey);
+    console.log('[loader] file found:', !!file)
 
     if (!file) {
         throw new Response("Image not found", { status: 404 });
     }
+    console.log('Calling Gemini')
 
     const ai = new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
     const base64ImageData = Buffer.from(await file.arrayBuffer()).toString("base64");
     const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         config: { responseMimeType: 'application/json' },
         contents: [
-            { inlineData: { mimeType: 'image/jpeg', data: base64ImageData } },
+            { inlineData: { mimeType: file.type, data: base64ImageData } },
             { text: "please give us a list of ingredients from the image and list the results as a clean JSON array of ingredients" }
         ],
     });
@@ -250,3 +253,4 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
         </>
     )
 }
+

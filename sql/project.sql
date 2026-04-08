@@ -64,3 +64,4 @@ create table if not exists ingredient
     id uuid not null,
     name_ing varchar(32)
 );
+

@@ -84,7 +84,8 @@ export async function action({request}: Route.ActionArgs): Promise<FormActionRes
             responseHeaders.append('Set-Cookie', expressSessionCookie)
         }
 
-    return redirect('/', {headers: responseHeaders})
+    const redirectTo = new URL(request.url).searchParams.get('redirectTo') ?? '/'
+    return redirect(redirectTo, {headers: responseHeaders})
 
 }
 
