@@ -171,8 +171,8 @@ export default function Home({loaderData}: Route.ComponentProps) {
                     </Link>
                 </div>
             ) : (
-                <Form className="space-y-4 my-16" method="POST" encType="multipart/form-data">
-                    <div>
+                <Form className="flex flex-col items-center space-y-4 my-16" method="POST" encType="multipart/form-data">
+                    <div className="flex flex-col items-center w-full max-w-lg">
                         {previewUrl && (
                             <div className="relative inline-block mt-4 mb-4">
                                 <img
@@ -201,7 +201,7 @@ export default function Home({loaderData}: Route.ComponentProps) {
                             className="hidden"
                         />
 
-                        {!previewUrl && <div className="flex w-full items-center justify-center">
+                        {!previewUrl && <div className="flex w-full items-center justify-center w-full">
                             <Label
                                 htmlFor="dropzone-file"
                                 className={[
