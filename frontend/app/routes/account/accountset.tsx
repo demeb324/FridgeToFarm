@@ -1,6 +1,6 @@
 import type { Route } from "./+types/accountset"
-import { Form, redirect, useActionData } from "react-router";
-import { getSession } from "~/utils/session.server";
+import { data, Form, redirect, useActionData } from "react-router";
+import { getSession, commitSession } from "~/utils/session.server";
 import { fileStorage, getAvatarStorageKey } from "~/utils/image-storage.server";
 import { type FileUpload, parseFormData } from "@remix-run/form-data-parser";
 import { useEffect, useRef, useState } from "react";
@@ -34,11 +34,36 @@ export async function action({ request }: Route.ActionArgs) {
     const contentType = request.headers.get("Content-Type") ?? "";
     if (!contentType.includes("multipart/form-data")) {
         const formData = await request.formData();
+
         if (formData.get("intent") === "delete") {
             await fileStorage.remove(storageKey);
-            return { success: true, message: "Profile picture deleted." };
+            return { success: true, message: "Profile picture deleted.", intent: "delete" };
         }
-        return { error: "Unknown action." };
+
+        if (formData.get("intent") === "update-profile") {
+            const newBio = (formData.get("bio") as string)?.trim() || null;
+            const response = await fetch(`${process.env.REST_API_URL}/user/update-profile`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", Cookie: request.headers.get("Cookie") ?? "" },
+                body: JSON.stringify({
+                    bio: newBio,
+                    currentPassword: formData.get("currentPassword"),
+                    newPassword: formData.get("newPassword"),
+                    confirmPassword: formData.get("confirmPassword"),
+                }),
+            });
+            const result = await response.json();
+            if (result.status === 200) {
+                session.set("user", { ...user, bio: newBio });
+                return data(
+                    { success: true, message: "Profile updated successfully.", intent: "update-profile" },
+                    { headers: { "Set-Cookie": await commitSession(session) } }
+                );
+            }
+            return { error: result.message ?? "Failed to update profile.", intent: "update-profile" };
+        }
+
+        return { error: "Unknown action.", intent: "unknown" };
     }
 
     // Upload / replace
@@ -55,9 +80,9 @@ export async function action({ request }: Route.ActionArgs) {
     await parseFormData(request, uploadHandler);
 
     if (!fileStored) {
-        return { error: "No image received — please select a file and try again." };
+        return { error: "No image received — please select a file and try again.", intent: "avatar" };
     }
-    return { success: true, message: "Profile picture updated." };
+    return { success: true, message: "Profile picture updated.", intent: "avatar" };
 }
 
 export default function AccountSet({ loaderData }: Route.ComponentProps) {
@@ -65,7 +90,7 @@ export default function AccountSet({ loaderData }: Route.ComponentProps) {
     const actionData = useActionData<typeof action>();
 
     // Cache-busting token so the <img> refetches after uploads/deletes
-    const [avatarVersion, setAvatarVersion] = useState(() => Date.now());
+    const [avatarVersion, setAvatarVersion] = useState(1);
     const [showAvatar, setShowAvatar] = useState(hasAvatar);
 
     // Upload state
@@ -251,7 +276,8 @@ export default function AccountSet({ loaderData }: Route.ComponentProps) {
                         )}
 
                         {clientError && <p className="text-sm text-red-600">{clientError}</p>}
-                        {actionData && "error" in actionData && actionData.error && (
+                        {actionData && "error" in actionData && actionData.error &&
+                         (!("intent" in actionData) || actionData.intent === "avatar" || actionData.intent === "delete") && (
                             <p className="text-sm text-red-600">{actionData.error}</p>
                         )}
                     </div>
@@ -275,89 +301,63 @@ export default function AccountSet({ loaderData }: Route.ComponentProps) {
                                     : "—"}
                             </td>
                         </tr>
-                        <tr>
-                            <td className="font-bold align-top pr-4 py-1">Bio:</td>
-                            <td className="py-1 whitespace-pre-wrap">{user.bio ?? "—"}</td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div className="mx-16">
-                <h2 className="mt-16 font-bold text-xl">Change Password</h2>
+            <div className="mx-16 mb-16">
+                <Form method="post" className="flex flex-col gap-0">
+                    <input type="hidden" name="intent" value="update-profile" />
+
+                    <h2 className="mt-8 font-bold text-xl">Bio</h2>
+                    <div className="my-4 pr-200">
+                        <textarea
+                            name="bio"
+                            rows={4}
+                            defaultValue={user.bio ?? ""}
+                            maxLength={512}
+                            className="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body resize-y"
+                            placeholder="Tell us a little about yourself…"
+                        />
+                    </div>
+
+                    <h2 className="mt-8 font-bold text-xl">Change Password</h2>
+                    <p className="text-sm text-gray-500 mb-2">Leave blank to keep your current password.</p>
 
                     <div className="relative my-4 pr-200">
-                        <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"></div>
-                        <input type="text" id="input-group-1"
-                               className="block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
+                        <input type="password" name="currentPassword"
+                               className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
                                placeholder="Current Password"/>
                     </div>
 
                     <div className="relative my-4 pr-200">
-                        <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"></div>
-                        <input type="text" id="input-group-1"
-                               className="block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
+                        <input type="password" name="newPassword"
+                               className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
                                placeholder="New Password"/>
                     </div>
 
                     <div className="relative my-4 pr-200">
-                        <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"></div>
-                        <input type="text" id="input-group-1"
-                               className="block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                               placeholder="Re-type Password"/>
+                        <input type="password" name="confirmPassword"
+                               className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
+                               placeholder="Re-type New Password"/>
                     </div>
 
-                <button type="button"
-                        className="text-white mt-4 bg-blue-600 box-border border border-transparent hover:bg-warning-strong focus:ring-4 focus:ring-warning-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">Save Password
-                </button>
-            </div>
+                    {actionData && "intent" in actionData && actionData.intent === "update-profile" && (
+                        <>
+                            {"error" in actionData && actionData.error && (
+                                <p className="text-sm text-red-600 mb-2">{actionData.error}</p>
+                            )}
+                            {"success" in actionData && actionData.success && (
+                                <p className="text-sm text-green-600 mb-2">{actionData.message}</p>
+                            )}
+                        </>
+                    )}
 
-            <div className="mx-16">
-                <h2 className="mt-16 font-bold text-xl">Change Email:</h2>
-                <table className="table-auto my-4">
-                    <tbody>
-                    <tr>
-                        <td className="font-bold">Current Email:&nbsp;</td>
-                        <td>marpob@gmail.com</td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div className="relative my-4 pr-200">
-                    <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"></div>
-                    <input type="text" id="input-group-1"
-                           className="block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                           placeholder="New Email"/>
-                </div>
-                <button type="button"
-                        className="text-white mt-4 bg-blue-600 box-border border border-transparent hover:bg-warning-strong focus:ring-4 focus:ring-warning-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">Save Email
-                </button>
-            </div>
-
-            <div className="mx-16">
-                <h2 className="mt-16 font-bold text-xl">Change Username:</h2>
-                <table className="table-auto my-4">
-                    <tbody>
-                    <tr>
-                        <td className="font-bold">Current Email:&nbsp;</td>
-                        <td>marpob39</td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div className="relative my-4 pr-200">
-                    <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"></div>
-                    <input type="text" id="input-group-1"
-                           className="block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                           placeholder="New Username"/>
-                </div>
-                <button type="button"
-                        className="text-white mt-4 bg-blue-600 box-border border border-transparent hover:bg-warning-strong focus:ring-4 focus:ring-warning-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">Save Username
-                </button>
-            </div>
-
-            <div className="mx-16 my-16">
-            <button type="button"
-                    className="text-white mt-4 bg-red-600 box-border border border-transparent hover:bg-warning-strong focus:ring-4 focus:ring-warning-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">Delete Account
-            </button>
+                    <button type="submit"
+                            className="text-white mt-4 bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none self-start">
+                        Save
+                    </button>
+                </Form>
             </div>
 
         </>

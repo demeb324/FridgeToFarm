@@ -76,6 +76,14 @@ export async function selectUserByActivationToken (activationToken: string): Pro
 //   return result[0] ?? null
 // }
 //
+export async function updateUserPasswordById (id: string, newHash: string): Promise<void> {
+  await sql`UPDATE "user" SET hash = ${newHash} WHERE id = ${id}`
+}
+
+export async function updateUserBioById (id: string, bio: string | null): Promise<void> {
+  await sql`UPDATE "user" SET bio = ${bio} WHERE id = ${id}`
+}
+
 export async function updateUser (user: PrivateUser): Promise<string> {
   const { id, activationToken, avatarUrl, bio, createdAt, email, hash, username } = user
   await sql `UPDATE "user" SET activation_token = ${activationToken}, avatar_url = ${avatarUrl}, bio = ${bio}, created_at = ${createdAt}, email = ${email}, hash = ${hash}, username = ${username} WHERE id = ${id}`
