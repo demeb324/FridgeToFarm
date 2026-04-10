@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "npx nodemon --delay 1.25 -e ts  --exec \"node --loader ts-node/esm --no-warnings --loader ./resolve-extensions-loader.mjs  ./src/index.ts\"",
+    "seed": "node --loader ts-node/esm --no-warnings --loader ./resolve-extensions-loader.mjs ./src/seed.ts",
     "test": "echo \\\"Error: no src/test specified\\\" && exit 1",
     "clean": "ts-standard --fix",
     "lint": "ts-standard"
