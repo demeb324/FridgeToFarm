@@ -248,7 +248,7 @@ export default function Home({loaderData}: Route.ComponentProps) {
 
             <section className="mt-16">
                 <div
-                    className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                    className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-8 md:gap-16 justify-items-center md:container md:mx-auto mx-4">
                     {recipes.map((recipe: Recipe) => <RecipeCard recipe={recipe} key={recipe.id}
                                                                  reviews={reviews[recipe.id]}/>)}
                 </div>

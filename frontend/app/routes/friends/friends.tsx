@@ -30,15 +30,15 @@ export default function allFriends() {
     // martin code
     return (
         <div className='min-h-screen'>
-            <div className="flex gap-4 p-4 mx-16 my-8">
+            <div className="flex flex-wrap gap-4 p-4 mx-4 md:mx-16 my-8">
                 <Link className="underline text-xl px-4" to="/friends/add">Add Friend</Link>
                 <Link className="underline text-xl px-4" to="/friends/my-friends">My Friends</Link>
             </div>
-            <h2 className="mx-16 font-bold text-3xl">Add Friends By Email:</h2>
+            <h2 className="mx-4 md:mx-16 font-bold text-3xl">Add Friends By Email:</h2>
             <section className="mt-16">
             </section>
 
-            <div className="relative my-8 mx-16 max-w-md">
+            <div className="relative my-8 mx-4 md:mx-16 max-w-md">
                 <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
 
                 </div>

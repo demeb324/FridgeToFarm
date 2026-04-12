@@ -190,7 +190,7 @@ export default function AccountSet({ loaderData }: Route.ComponentProps) {
         <>
             <h1 className="my-8 text-center font-bold text-4xl">Account Settings</h1>
 
-            <Form method="post" encType="multipart/form-data" className="mx-16 mb-16 flex flex-col gap-0">
+            <Form method="post" encType="multipart/form-data" className="mx-4 md:mx-16 mb-16 flex flex-col gap-0">
 
                 <h2 className="mb-4 font-bold text-xl">My profile:</h2>
 
@@ -304,7 +304,7 @@ export default function AccountSet({ loaderData }: Route.ComponentProps) {
                 </div>
 
                 <h2 className="mt-8 font-bold text-xl">Bio</h2>
-                <div className="my-4 pr-200">
+                <div className="my-4 max-w-lg">
                     <textarea
                         name="bio"
                         rows={4}
@@ -318,19 +318,19 @@ export default function AccountSet({ loaderData }: Route.ComponentProps) {
                 <h2 className="mt-8 font-bold text-xl">Change Password</h2>
                 <p className="text-sm text-gray-500 mb-2">Leave blank to keep your current password.</p>
 
-                <div className="relative my-4 pr-200">
+                <div className="relative my-4 max-w-lg">
                     <input type="password" name="currentPassword"
                            className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
                            placeholder="Current Password"/>
                 </div>
 
-                <div className="relative my-4 pr-200">
+                <div className="relative my-4 max-w-lg">
                     <input type="password" name="newPassword"
                            className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
                            placeholder="New Password"/>
                 </div>
 
-                <div className="relative my-4 pr-200">
+                <div className="relative my-4 max-w-lg">
                     <input type="password" name="confirmPassword"
                            className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
                            placeholder="Re-type New Password"/>

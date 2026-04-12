@@ -122,10 +122,10 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
             </div>
 
             <form onSubmit={handleSubmit}>
-                <h2 className="mx-16 mb-4 font-bold text-2xl">
+                <h2 className="mx-4 md:mx-16mb-4 font-bold text-2xl">
                     List of items on the picture
                 </h2>
-                <div className="mx-16 text-left">
+                <div className="mx-4 md:mx-16text-left">
                     <ul className="list-none">
                         {fields.map((field, index) => (
                             <li key={field.id} className="flex items-center gap-2 text-lg py-1">
@@ -147,11 +147,11 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                     )}
                 </div>
 
-                <h2 className="mx-16 mb-4 mt-8 font-bold text-2xl">
+                <h2 className="mx-4 md:mx-16mb-4 mt-8 font-bold text-2xl">
                     Is this Everything? Add items:
                 </h2>
 
-                <div className="mx-16 pr-96 space-y-4">
+                <div className="mx-4 md:mx-16max-w-lg space-y-4">
                     <div className="flex gap-2 items-end">
                         <select
                             value={selectValue}
@@ -203,10 +203,10 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                     </div>
                 </div>
 
-                <h2 className="mx-16 mb-4 mt-8 font-bold text-2xl">
+                <h2 className="mx-4 md:mx-16mb-4 mt-8 font-bold text-2xl">
                     What type of meal do you want to eat?
                 </h2>
-                <div className="mx-16 pr-96">
+                <div className="mx-4 md:mx-16max-w-lg">
                     <select
                         {...register('mealType')}
                         className="mt-4 block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
@@ -222,10 +222,10 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                     )}
                 </div>
 
-                <h2 className="mx-16 mb-4 mt-8 font-bold text-2xl">
+                <h2 className="mx-4 md:mx-16mb-4 mt-8 font-bold text-2xl">
                     What cuisines do you like to experience?
                 </h2>
-                <div className="mx-16 pr-96">
+                <div className="mx-4 md:mx-16max-w-lg">
                     <select
                         {...register('cuisine')}
                         className="mt-4 block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
@@ -241,7 +241,7 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                     )}
                 </div>
 
-                <div className="mx-16 mb-28 mt-6">
+                <div className="mx-4 md:mx-16mb-28 mt-6">
                     <button
                         type="submit"
                         className="text-white bg-blue-600 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"

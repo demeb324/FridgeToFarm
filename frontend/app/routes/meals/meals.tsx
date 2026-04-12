@@ -38,8 +38,8 @@ export default function Meals({loaderData}: Route.ComponentProps) {
         <>
             <h1 className="text-3xl text-center font-bold my-8">Meals</h1>
 
-            <Form method="get" className="flex flex-row gap-8 justify-between mx-16">
-                <div className="basis-1/3">
+            <Form method="get" className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 items-end mx-auto px-4 md:px-16 max-w-5xl">
+                <div>
                     <h3 className="text-xl font-bold mb-4">Meals Selection:</h3>
                     <select
                         name="mealCategory"
@@ -53,7 +53,7 @@ export default function Meals({loaderData}: Route.ComponentProps) {
                     </select>
                 </div>
 
-                <div className="basis-1/3">
+                <div>
                     <h3 className="text-xl font-bold mb-4">Ingredients Selection:</h3>
                     <select
                         name="ingredient"
@@ -67,7 +67,7 @@ export default function Meals({loaderData}: Route.ComponentProps) {
                     </select>
                 </div>
 
-                <div className="basis-1/3">
+                <div>
                     <h3 className="text-xl font-bold mb-4">Cuisines Selection:</h3>
                     <select
                         name="cuisine"
@@ -94,7 +94,7 @@ export default function Meals({loaderData}: Route.ComponentProps) {
                     {recipes.length > 0 ? "Recommended Recipes" : "No recipes found"}
                 </h1>
                 <div
-                    className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                    className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-8 md:gap-16 justify-items-center md:container md:mx-auto mx-4">
                     {recipes.map((recipe: Recipe) => (
                         <RecipeCard recipe={recipe} key={recipe.id} reviews={reviews[recipe.id] ?? []}/>
                     ))}

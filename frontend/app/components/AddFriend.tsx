@@ -2,7 +2,7 @@ import { Form } from "react-router";
 
 export function AddFriend({ requestorId }: { requestorId: string }) {
     return (
-        <Form method="post" className="relative my-8 mx-16 pr-80">
+        <Form method="post" className="relative my-8 mx-4 md:mx-16">
             <input type="hidden" name="intent" value="sendFriendRequest" />
             <input type="hidden" name="requestorId" value={requestorId} />
             <input

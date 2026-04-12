@@ -47,7 +47,7 @@ export default function Recipe(): Element {
             <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
                 <div>
                     <section className="mt-16">
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-8 md:gap-16 justify-items-center md:container md:mx-auto mx-4">
                             {recipes.map(recipe => <RecipeCard recipe={recipe}/>)}
                         </div>
                     </section>
@@ -134,7 +134,7 @@ export default function Recipe(): Element {
             {/* REVIEWS */}
             {/*this is the code from the hole section Martin to copy and paste for the top and bottom */}
             <section className="mt-16">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-8 md:gap-16 justify-items-center md:container md:mx-auto mx-4">
                     {recipes.map(recipe => <RecipeCard recipe={recipe}/>)}
                 </div>
             </section>

@@ -110,16 +110,16 @@ export default function AllFriends() {
     return (
         <div>
             <div>
-                <h2 className="my-8 mx-16 font-bold text-3xl">Search New Friend:</h2>
+                <h2 className="my-8 mx-4 md:mx-16 font-bold text-3xl">Search New Friend:</h2>
                 <AddFriend requestorId={user.id} />
                 {actionData?.message && (
-                    <p className={`mx-16 mt-2 text-sm font-medium ${actionData.status === 200 ? "text-green-600" : "text-red-600"}`}>
+                    <p className={`mx-4 md:mx-16 mt-2 text-sm font-medium ${actionData.status === 200 ? "text-green-600" : "text-red-600"}`}>
                         {actionData.message}
                     </p>
                 )}
             </div>
 
-            <div className="relative my-8 mx-16 pr-80">
+            <div className="relative my-8 mx-4 md:mx-16">
                 <h2 className="my-8 font-bold text-3xl">Search My Friends:</h2>
                 <input
                     type="text"
@@ -130,14 +130,14 @@ export default function AllFriends() {
                 />
             </div>
 
-            <h2 className="mx-16 font-bold text-3xl">My Friends:</h2>
+            <h2 className="mx-4 md:mx-16 font-bold text-3xl">My Friends:</h2>
             <section className="mt-16">
                 {filteredFriends.length === 0 ? (
-                    <p className="mx-16 text-body">
+                    <p className="mx-4 md:mx-16 text-body">
                         {nameSearch ? "No friends match your search." : "You have no friends yet. Search by email above to add some!"}
                     </p>
                 ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-4">
                         {filteredFriends.map(friend => (
                             <FriendCard key={friend.id} id={friend.id} friend={{ image: `/api/avatar/${friend.id}`, name: friend.username }} />
                         ))}
@@ -147,9 +147,9 @@ export default function AllFriends() {
 
             {pendingRequests.length > 0 && (
                 <>
-                    <h2 className="mx-16 mt-16 mb-8 font-bold text-3xl text-center">Requests:</h2>
-                    <section className="my-16 mx-16">
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-20">
+                    <h2 className="mx-4 md:mx-16 mt-16 mb-8 font-bold text-3xl text-center">Requests:</h2>
+                    <section className="my-16 mx-4 md:mx-16">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center md:container md:mx-auto mx-4">
                             {pendingRequests.map(req => (
                                 <FriendRequestCard key={req.id} requestorId={req.id} friend={{ image: `/api/avatar/${req.id}`, name: req.username }} />
                             ))}

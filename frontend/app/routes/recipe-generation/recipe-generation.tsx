@@ -47,14 +47,14 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
 
     return (
         <>
-            <h1 className="mx-16 mt-16 mb-2 font-bold text-3xl">
+            <h1 className="mx-4 md:mx-16mt-16 mb-2 font-bold text-3xl">
                 Recipe Suggestions
             </h1>
-            <p className="mx-16 mb-12 text-body">
+            <p className="mx-4 md:mx-16mb-12 text-body">
                 {[cuisine, mealType].filter(Boolean).join(' · ')}
             </p>
 
-            <section className="mx-16 mb-16">
+            <section className="mx-4 md:mx-16mb-16">
                 <h2 className="font-bold text-2xl mb-6">AI Suggested Recipes</h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-6">
                     {aiSuggestions.map((recipe) => {
@@ -99,7 +99,7 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                 </div>
             </section>
 
-            <section className="mx-16 mb-28">
+            <section className="mx-4 md:mx-16mb-28">
                 <h2 className="font-bold text-2xl mb-6">From Our Collection</h2>
                 {dbRecipes.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center">
