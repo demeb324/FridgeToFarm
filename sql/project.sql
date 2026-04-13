@@ -1,9 +1,3 @@
-drop table if exists review;
-drop table if exists friend;
-drop table if exists recipe;
-drop table if exists "user";
-drop table if exists ingredient;
-
 create table if not exists "user"
 (
     id uuid not null primary key,
