@@ -3,7 +3,7 @@ import {RecipeCard} from "~/components/recipeCard";
 import {getAllRecipes} from "../../utils/models/recipe.model";
 import {getRecipeReviews} from "~/utils/models/review.model";
 import type {Recipe} from "~/utils/models/recipe.model";
-import {Form, Link, useActionData} from "react-router";
+import {Form, Link, redirect, useActionData} from "react-router";
 import {useEffect, useRef, useState} from "react";
 import {
     type FileUpload,
@@ -32,7 +32,7 @@ export async function action({request}: Route.ActionArgs) {
     if (!fileStored) {
         return {error: 'No image received — please select a file and try again.'}
     }
-    return {uploadedId: id}
+    return redirect(`/items-list/${id}`)
 }
 
 export async function loader() {
@@ -44,15 +44,6 @@ export async function loader() {
 
 export default function Home({loaderData}: Route.ComponentProps) {
     const actionData = useActionData<typeof action>();
-    const [uploadedId, setUploadedId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (actionData && 'uploadedId' in actionData && actionData.uploadedId) {
-            setUploadedId(actionData.uploadedId);
-            setSelectedFile(null);
-            setPreviewUrl('');
-        }
-    }, [actionData]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -150,32 +141,17 @@ export default function Home({loaderData}: Route.ComponentProps) {
 
             {/* ── UPLOAD CARD ──────────────────────────────── */}
             <section id="upload" className="px-4 py-8 max-w-xl mx-auto">
-                {uploadedId ? (
-                    <div className="flex flex-col items-center gap-6">
-                        <div className="relative inline-block">
-                            <img
-                                src={`/api/image/${uploadedId}`}
-                                alt="Uploaded"
-                                className="max-w-sm max-h-80 rounded-xl border border-gray-200 object-contain"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setUploadedId(null)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                                aria-label="Remove image"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <Link
-                            to={`/items-list/${uploadedId}`}
-                            className="px-6 py-2.5 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
-                        >
-                            Next: Review Ingredients →
-                        </Link>
-                    </div>
-                ) : (
                     <Form method="POST" encType="multipart/form-data">
+                        {/* File input always in the DOM so the file is included on submit */}
+                        <input
+                            type="file"
+                            id="dropzone-file"
+                            name="image"
+                            ref={fileInputRef}
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
                         <div className="border-2 border-dashed border-gray-300 rounded-2xl p-10 text-center bg-white hover:border-amber-300 transition-colors">
                             {previewUrl ? (
                                 <div className="flex flex-col items-center gap-4">
@@ -225,15 +201,6 @@ export default function Home({loaderData}: Route.ComponentProps) {
                                             </div>
                                             <p className="text-xs text-amber-500 font-medium mt-1">AI-powered ingredient recognition</p>
                                         </div>
-                                        <input
-                                            type="file"
-                                            id="dropzone-file"
-                                            name="image"
-                                            ref={fileInputRef}
-                                            accept="image/jpeg,image/png,image/gif,image/webp"
-                                            onChange={handleFileSelect}
-                                            className="hidden"
-                                        />
                                     </label>
                                 </>
                             )}
@@ -244,7 +211,6 @@ export default function Home({loaderData}: Route.ComponentProps) {
                         )}
                         {error && <p className="mt-3 text-sm text-red-600 text-center">{error}</p>}
                     </Form>
-                )}
             </section>
 
             {/* ── HOW IT WORKS ─────────────────────────────── */}
