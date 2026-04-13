@@ -140,7 +140,7 @@ export default function Login() {
     const registerActionData = registerFetcher.data as FormActionResponse | undefined
 
     const tabBase = "flex-1 py-2.5 text-sm font-medium rounded-t-lg transition-colors"
-    const tabActive = "bg-white text-blue-600 border-b-2 border-blue-600"
+    const tabActive = "bg-white text-amber-600 border-b-2 border-amber-500"
     const tabInactive = "bg-neutral-secondary-medium text-body hover:text-heading"
 
     return (
@@ -207,7 +207,7 @@ export default function Login() {
 
                             <button
                                 type="submit"
-                                className="mt-6 text-white bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+                                className="mt-6 text-white bg-amber-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
                             >
                                 Log In
                             </button>
@@ -296,7 +296,7 @@ export default function Login() {
 
                             <button
                                 type="submit"
-                                className="mt-6 text-white bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+                                className="mt-6 text-white bg-amber-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
                             >
                                 Create Account
                             </button>

@@ -173,7 +173,7 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                                     setSelectValue('')
                                 }
                             }}
-                            className="text-white bg-blue-600 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none whitespace-nowrap"
+                            className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none whitespace-nowrap"
                         >
                             Add
                         </button>
@@ -196,7 +196,7 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                                     setFreeText('')
                                 }
                             }}
-                            className="text-white bg-blue-600 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none whitespace-nowrap"
+                            className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none whitespace-nowrap"
                         >
                             Add
                         </button>
@@ -244,7 +244,7 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
                 <div className="mx-4 md:mx-16mb-28 mt-6">
                     <button
                         type="submit"
-                        className="text-white bg-blue-600 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+                        className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
                     >
                         Next
                     </button>

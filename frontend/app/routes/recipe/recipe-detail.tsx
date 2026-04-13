@@ -102,7 +102,7 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
                 <ol className="space-y-6">
                     {recipe.instructions.map((step) => (
                         <li key={step.stepNumber} className="flex gap-4">
-                            <span className="font-bold text-blue-600 text-lg w-6 shrink-0">{step.stepNumber}</span>
+                            <span className="font-bold text-amber-600 text-lg w-6 shrink-0">{step.stepNumber}</span>
                             <p className="text-body">{step.instruction}</p>
                         </li>
                     ))}
@@ -202,7 +202,7 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
 
                         <button
                             type="submit"
-                            className="text-white bg-blue-600 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+                            className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
                         >
                             Submit Review
                         </button>

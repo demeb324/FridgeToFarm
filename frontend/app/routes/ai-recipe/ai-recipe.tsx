@@ -109,7 +109,7 @@ export default function AiRecipe({loaderData, actionData}: Route.ComponentProps)
 
     return (
         <div className="max-w-3xl mx-auto px-8 py-16 mb-28">
-            <p className="text-blue-600 text-sm font-medium mb-2">AI Generated Recipe</p>
+            <p className="text-amber-600 text-sm font-medium mb-2">AI Generated Recipe</p>
             <h1 className="font-bold text-3xl mb-2">{recipe.title}</h1>
             <p className="text-body mb-8">{recipe.description}</p>
 
@@ -148,7 +148,7 @@ export default function AiRecipe({loaderData, actionData}: Route.ComponentProps)
                 <ol className="space-y-6">
                     {recipe.instructions.map((step) => (
                         <li key={step.stepNumber} className="flex gap-4">
-                            <span className="font-bold text-blue-600 text-lg w-6 shrink-0">{step.stepNumber}</span>
+                            <span className="font-bold text-amber-600 text-lg w-6 shrink-0">{step.stepNumber}</span>
                             <p className="text-body">{step.instruction}</p>
                         </li>
                     ))}
@@ -188,7 +188,7 @@ export default function AiRecipe({loaderData, actionData}: Route.ComponentProps)
                     <input type="hidden" name="mealType" value={mealType} />
                     <button
                         type="submit"
-                        className="text-white bg-blue-600 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-6 py-3 focus:outline-none"
+                        className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-6 py-3 focus:outline-none"
                     >
                         Save Recipe
                     </button>

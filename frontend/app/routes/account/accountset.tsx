@@ -31,7 +31,6 @@ export async function action({ request }: Route.ActionArgs) {
     const storageKey = getAvatarStorageKey(user.id);
     const contentType = request.headers.get("Content-Type") ?? "";
 
-    // Delete is a plain (non-multipart) form post
     if (!contentType.includes("multipart/form-data")) {
         const formData = await request.formData();
         if (formData.get("intent") === "delete") {
@@ -41,7 +40,6 @@ export async function action({ request }: Route.ActionArgs) {
         return { error: "Unknown action.", intent: "unknown" };
     }
 
-    // All other actions go through the unified multipart form
     let fileSaved = false;
     const formData = await parseFormData(request, async (fileUpload: FileUpload) => {
         if (fileUpload.fieldName === "avatar" && fileUpload.type.startsWith("image/")) {
@@ -52,7 +50,6 @@ export async function action({ request }: Route.ActionArgs) {
 
     const intent = formData.get("intent") as string;
 
-    // "Save Picture" — only saves the uploaded file
     if (intent === "save-picture") {
         if (!fileSaved) {
             return { error: "No image received — please select a file and try again.", intent: "avatar" };
@@ -60,7 +57,6 @@ export async function action({ request }: Route.ActionArgs) {
         return { success: true, message: "Profile picture saved.", intent: "avatar" };
     }
 
-    // "Save" — updates bio/password and also saves picture if one was selected
     if (intent === "update-profile") {
         const newBio = (formData.get("bio") as string)?.trim() || null;
         const response = await fetch(`${process.env.REST_API_URL}/user/update-profile`, {
@@ -88,33 +84,78 @@ export async function action({ request }: Route.ActionArgs) {
     return { error: "Unknown action.", intent: "unknown" };
 }
 
+// ── Sidebar nav button ────────────────────────────────────────
+function SidebarItem({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={[
+                "w-full text-left px-4 py-2 rounded-lg border text-sm transition-colors",
+                active
+                    ? "border-gray-300 bg-white font-semibold text-gray-900"
+                    : "border-gray-200 text-gray-500 hover:bg-white hover:text-gray-800",
+            ].join(" ")}
+        >
+            {label}
+        </button>
+    );
+}
+
+// ── Profile field row ─────────────────────────────────────────
+function FieldRow({
+    label,
+    value,
+    action,
+    onAction,
+}: {
+    label: string;
+    value: React.ReactNode;
+    action?: string;
+    onAction?: () => void;
+}) {
+    return (
+        <div className="flex items-center justify-between px-6 py-4">
+            <span className="text-sm text-gray-500 w-28 shrink-0">{label}</span>
+            <span className="flex-1 text-sm text-gray-800">{value}</span>
+            {action && (
+                <button
+                    type="button"
+                    onClick={onAction}
+                    className="ml-4 px-4 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shrink-0"
+                >
+                    {action}
+                </button>
+            )}
+        </div>
+    );
+}
+
 export default function AccountSet({ loaderData }: Route.ComponentProps) {
     const { user, hasAvatar } = loaderData;
     const actionData = useActionData<typeof action>();
 
-    // Cache-busting token so the <img> refetches after uploads/deletes
+    const [activeSection, setActiveSection] = useState<"profile" | "security">("profile");
+    const [editingBio, setEditingBio] = useState(false);
     const [avatarVersion, setAvatarVersion] = useState(1);
     const [showAvatar, setShowAvatar] = useState(hasAvatar);
 
-    // Upload state
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>("");
     const [clientError, setClientError] = useState<string | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
 
     const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    const MAX_SIZE = 5 * 1024 * 1024;
 
-    useEffect(() => {
-        setShowAvatar(hasAvatar);
-    }, [hasAvatar]);
+    useEffect(() => { setShowAvatar(hasAvatar); }, [hasAvatar]);
 
     useEffect(() => {
         if (actionData && "success" in actionData && actionData.success) {
             setAvatarVersion(Date.now());
             setSelectedFile(null);
             setPreviewUrl("");
+            setEditingBio(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
     }, [actionData]);
@@ -151,211 +192,217 @@ export default function AccountSet({ loaderData }: Route.ComponentProps) {
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const processDroppedFile = (file: File) => {
-        if (!ALLOWED_TYPES.includes(file.type)) {
-            setClientError("Invalid file type. Please select JPEG, PNG, GIF, or WebP.");
-            return;
-        }
-        if (file.size > MAX_SIZE) {
-            setClientError("Image too large. Maximum size is 5 MB.");
-            return;
-        }
-        setClientError(null);
-        setSelectedFile(file);
-        if (fileInputRef.current) {
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            fileInputRef.current.files = dt.files;
-        }
-    };
+    // Joined date formatted as "Jan 2025"
+    const joinedDate = user.createdAt
+        ? new Date(user.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+        : null;
 
-    const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
+    // Initials fallback
+    const initials = (user.username ?? "?").slice(0, 2).toUpperCase();
 
-    const handleDragLeave = () => {
-        setIsDragging(false);
-    };
+    return (
+        <div className="flex flex-col md:flex-row max-w-5xl mx-auto px-4 py-10 gap-8 min-h-[calc(100vh-3.5rem)]">
 
-    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const file = e.dataTransfer.files?.[0];
-        if (!file) return;
-        processDroppedFile(file);
-    };
-
-    return(
-        <>
-            <h1 className="my-8 text-center font-bold text-4xl">Account Settings</h1>
-
-            <Form method="post" encType="multipart/form-data" className="mx-4 md:mx-16 mb-16 flex flex-col gap-0">
-
-                <h2 className="mb-4 font-bold text-xl">My profile:</h2>
-
-                <div className="flex items-start gap-6 mb-4">
-                    {previewUrl ? (
-                        <img
-                            src={previewUrl}
-                            alt="Preview"
-                            className="w-40 h-40 object-cover rounded-lg border border-gray-300 flex-shrink-0"
-                        />
-                    ) : showAvatar ? (
-                        <img
-                            src={`/api/avatar/${user.id}?v=${avatarVersion}`}
-                            alt="Profile picture"
-                            className="w-40 h-40 object-cover rounded-lg border border-gray-300 flex-shrink-0"
-                            onError={() => setShowAvatar(false)}
-                        />
-                    ) : (
-                        <label
-                            htmlFor="avatar-file"
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            className={[
-                                "w-40 h-40 flex flex-col items-center justify-center rounded-lg border-2 border-dashed cursor-pointer transition-colors flex-shrink-0 text-center px-2",
-                                isDragging
-                                    ? "border-blue-400 bg-blue-50"
-                                    : "border-gray-300 bg-gray-50 hover:bg-gray-100",
-                            ].join(" ")}
-                        >
-                            <svg className="mb-2 h-7 w-7 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                            </svg>
-                            <p className="text-xs text-gray-500">
-                                <span className="font-semibold">Click to upload</span> or drag and drop
-                            </p>
-                        </label>
-                    )}
-
-                    <div className="flex flex-col gap-3">
-                        <input
-                            type="file"
-                            id="avatar-file"
-                            name="avatar"
-                            ref={fileInputRef}
-                            accept="image/jpeg,image/png,image/gif,image/webp"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                        />
-
-                        {selectedFile ? (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={handleClearSelection}
-                                    className="text-sm text-gray-600 hover:text-gray-800 underline self-start"
-                                >
-                                    Clear selection
-                                </button>
-                                <button
-                                    type="submit"
-                                    name="intent"
-                                    value="save-picture"
-                                    className="text-white bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none self-start">
-                                    Save Picture
-                                </button>
-                            </>
-                        ) : showAvatar ? (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="text-white bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none self-start">
-                                    Edit Picture
-                                </button>
-                                <Form method="post">
-                                    <input type="hidden" name="intent" value="delete" />
-                                    <button
-                                        type="submit"
-                                        className="text-white bg-red-600 box-border border border-transparent hover:bg-red-700 focus:ring-4 focus:ring-red-300 shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none self-start">
-                                        Delete Picture
-                                    </button>
-                                </Form>
-                            </>
-                        ) : null}
-
-                        {clientError && <p className="text-sm text-red-600">{clientError}</p>}
-                        {actionData && "error" in actionData && actionData.error &&
-                         (!("intent" in actionData) || actionData.intent === "avatar" || actionData.intent === "delete") && (
-                            <p className="text-sm text-red-600">{actionData.error}</p>
-                        )}
-                        {actionData && "intent" in actionData && actionData.intent === "avatar" &&
-                         "success" in actionData && actionData.success && (
-                            <p className="text-sm text-green-600">{actionData.message}</p>
-                        )}
-                    </div>
+            {/* ── Left sidebar ── */}
+            <aside className="md:w-52 shrink-0">
+                <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3 px-1">Settings</p>
+                <div className="flex flex-col gap-2">
+                    <SidebarItem label="Profile"  active={activeSection === "profile"}  onClick={() => setActiveSection("profile")} />
+                    <SidebarItem label="Change Password" active={activeSection === "security"} onClick={() => setActiveSection("security")} />
                 </div>
+            </aside>
 
-                <div className="my-4 flex flex-col gap-1">
-                    <p><span className="font-bold">Username:</span> {user.username}</p>
-                    <p>
-                        <span className="font-bold">Joined:</span>{" "}
-                        {user.createdAt
-                            ? new Date(user.createdAt).toLocaleDateString(undefined, {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })
-                            : "—"}
-                    </p>
-                </div>
+            {/* ── Right content ── */}
+            <main className="flex-1 min-w-0">
 
-                <h2 className="mt-8 font-bold text-xl">Bio</h2>
-                <div className="my-4 max-w-lg">
-                    <textarea
-                        name="bio"
-                        rows={4}
-                        defaultValue={user.bio ?? ""}
-                        maxLength={512}
-                        className="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body resize-y"
-                        placeholder="Tell us a little about yourself…"
-                    />
-                </div>
-
-                <h2 className="mt-8 font-bold text-xl">Change Password</h2>
-                <p className="text-sm text-gray-500 mb-2">Leave blank to keep your current password.</p>
-
-                <div className="relative my-4 max-w-lg">
-                    <input type="password" name="currentPassword"
-                           className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                           placeholder="Current Password"/>
-                </div>
-
-                <div className="relative my-4 max-w-lg">
-                    <input type="password" name="newPassword"
-                           className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                           placeholder="New Password"/>
-                </div>
-
-                <div className="relative my-4 max-w-lg">
-                    <input type="password" name="confirmPassword"
-                           className="block w-full ps-3 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                           placeholder="Re-type New Password"/>
-                </div>
-
-                {actionData && "intent" in actionData && actionData.intent === "update-profile" && (
+                {/* ════════════ PROFILE SECTION ════════════ */}
+                {activeSection === "profile" && (
                     <>
-                        {"error" in actionData && actionData.error && (
-                            <p className="text-sm text-red-600 mb-2">{actionData.error}</p>
-                        )}
-                        {"success" in actionData && actionData.success && (
-                            <p className="text-sm text-green-600 mb-2">{actionData.message}</p>
-                        )}
+                        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+                        <p className="text-sm text-gray-500 mt-1">Manage your personal information and public profile.</p>
+
+                        <Form method="post" encType="multipart/form-data">
+                            {/* Hidden file input — triggered by "Change photo" button */}
+                            <input
+                                type="file"
+                                id="avatar-file"
+                                name="avatar"
+                                ref={fileInputRef}
+                                accept="image/jpeg,image/png,image/gif,image/webp"
+                                onChange={handleFileSelect}
+                                className="hidden"
+                            />
+
+                            <div className="border border-gray-200 rounded-2xl overflow-hidden mt-6">
+
+                                {/* ── Avatar + name row ── */}
+                                <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                                    <div className="flex items-center gap-4">
+                                        {previewUrl ? (
+                                            <img src={previewUrl} alt="Preview"
+                                                className="w-14 h-14 rounded-full object-cover border border-gray-200" />
+                                        ) : showAvatar ? (
+                                            <img src={`/api/avatar/${user.id}?v=${avatarVersion}`} alt="Avatar"
+                                                className="w-14 h-14 rounded-full object-cover border border-gray-200"
+                                                onError={() => setShowAvatar(false)} />
+                                        ) : (
+                                            <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-semibold text-lg select-none">
+                                                {initials}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{user.username}</p>
+                                            {joinedDate && (
+                                                <p className="text-sm text-gray-400">Member since {joinedDate}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        {selectedFile ? (
+                                            <>
+                                                <button type="button" onClick={handleClearSelection}
+                                                    className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                                                    Cancel
+                                                </button>
+                                                <button type="submit" name="intent" value="save-picture"
+                                                    className="px-4 py-1.5 border border-gray-800 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                                                    Save picture
+                                                </button>
+                                            </>
+                                        ) : showAvatar ? (
+                                            <>
+                                                <button type="button" onClick={() => fileInputRef.current?.click()}
+                                                    className="px-4 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                                                    Change photo
+                                                </button>
+                                                <Form method="post" className="inline">
+                                                    <input type="hidden" name="intent" value="delete" />
+                                                    <button type="submit"
+                                                        className="px-4 py-1.5 border border-red-200 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+                                                        Remove
+                                                    </button>
+                                                </Form>
+                                            </>
+                                        ) : (
+                                            <button type="button" onClick={() => fileInputRef.current?.click()}
+                                                className="px-4 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                                                Change photo
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* avatar errors */}
+                                {(clientError || (actionData && "error" in actionData && (actionData.intent === "avatar" || actionData.intent === "delete"))) && (
+                                    <p className="px-6 py-2 text-sm text-red-600">
+                                        {clientError ?? ("error" in actionData! && actionData.error)}
+                                    </p>
+                                )}
+                                {actionData && "intent" in actionData && actionData.intent === "avatar" && "success" in actionData && actionData.success && (
+                                    <p className="px-6 py-2 text-sm text-green-600">{actionData.message}</p>
+                                )}
+
+                                {/* ── Field rows ── */}
+                                <div className="divide-y divide-gray-100">
+                                    <FieldRow label="Username" value={user.username} />
+                                    <FieldRow label="Member since" value={joinedDate ?? "—"} />
+
+                                    {/* Bio row with inline edit */}
+                                    <div>
+                                        <div className="flex items-center justify-between px-6 py-4">
+                                            <span className="text-sm text-gray-500 w-28 shrink-0">Bio</span>
+                                            <span className="flex-1 text-sm text-gray-800 truncate">{user.bio ?? "—"}</span>
+                                            <button type="button" onClick={() => setEditingBio(b => !b)}
+                                                className="ml-4 px-4 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shrink-0">
+                                                {editingBio ? "Cancel" : "Edit"}
+                                            </button>
+                                        </div>
+                                        {editingBio && (
+                                            <div className="px-6 pb-5">
+                                                <textarea
+                                                    name="bio"
+                                                    rows={3}
+                                                    defaultValue={user.bio ?? ""}
+                                                    maxLength={512}
+                                                    className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 resize-y"
+                                                    placeholder="Tell us a little about yourself…"
+                                                />
+                                                <div className="flex gap-2 mt-2">
+                                                    <button type="submit" name="intent" value="update-profile"
+                                                        className="px-4 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                                                        Save
+                                                    </button>
+                                                    <button type="button" onClick={() => setEditingBio(false)}
+                                                        className="px-4 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                                {actionData && "intent" in actionData && actionData.intent === "update-profile" && (
+                                                    <>
+                                                        {"error" in actionData && actionData.error && (
+                                                            <p className="mt-2 text-sm text-red-600">{actionData.error}</p>
+                                                        )}
+                                                        {"success" in actionData && actionData.success && (
+                                                            <p className="mt-2 text-sm text-green-600">{actionData.message}</p>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                </div>
+                            </div>
+                        </Form>
                     </>
                 )}
 
-                <button
-                    type="submit"
-                    name="intent"
-                    value="update-profile"
-                    className="text-white mt-4 bg-blue-600 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none self-start">
-                    Save
-                </button>
+                {/* ════════════ SECURITY SECTION ════════════ */}
+                {activeSection === "security" && (
+                    <>
+                        <h1 className="text-2xl font-bold text-gray-900">Security</h1>
+                        <p className="text-sm text-gray-500 mt-1">Update your password to keep your account secure.</p>
 
-            </Form>
-        </>
-    )
+                        <Form method="post" encType="multipart/form-data">
+                            <div className="border border-gray-200 rounded-2xl overflow-hidden mt-6">
+                                <div className="px-6 py-5 border-b border-gray-100">
+                                    <p className="text-sm font-semibold text-gray-800">Change password</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">Leave blank to keep your current password.</p>
+                                </div>
+                                <div className="px-6 py-5 flex flex-col gap-4 max-w-sm">
+                                    <input type="password" name="currentPassword"
+                                        className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400"
+                                        placeholder="Current password" />
+                                    <input type="password" name="newPassword"
+                                        className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400"
+                                        placeholder="New password" />
+                                    <input type="password" name="confirmPassword"
+                                        className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400"
+                                        placeholder="Confirm new password" />
+
+                                    {actionData && "intent" in actionData && actionData.intent === "update-profile" && (
+                                        <>
+                                            {"error" in actionData && actionData.error && (
+                                                <p className="text-sm text-red-600">{actionData.error}</p>
+                                            )}
+                                            {"success" in actionData && actionData.success && (
+                                                <p className="text-sm text-green-600">{actionData.message}</p>
+                                            )}
+                                        </>
+                                    )}
+
+                                    <button type="submit" name="intent" value="update-profile"
+                                        className="self-start px-5 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                                        Update password
+                                    </button>
+                                </div>
+                            </div>
+                        </Form>
+                    </>
+                )}
+
+            </main>
+        </div>
+    );
 }

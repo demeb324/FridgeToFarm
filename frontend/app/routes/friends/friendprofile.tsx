@@ -27,7 +27,7 @@ export default function FriendProfile() {
 
     return (
         <div className="min-h-screen p-8 max-w-lg mx-auto">
-            <Link to="/allfriends" className="inline-flex items-center gap-2 text-blue-600 hover:underline mb-8">
+            <Link to="/allfriends" className="inline-flex items-center gap-2 text-amber-600 hover:underline mb-8">
                 ← Back to Friends
             </Link>
             <div className="flex flex-col items-center gap-6 mt-8">

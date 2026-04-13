@@ -13,9 +13,11 @@ export default function MainLayout() {
     const {isLoggedIn} = useLoaderData<typeof loader>()
     return (
         <>
-        <Navigation isLoggedIn={isLoggedIn}/>
-        <Outlet/>
-            <Footer />
+            <Navigation isLoggedIn={isLoggedIn}/>
+            <div className="pt-14">
+                <Outlet/>
+                <Footer />
+            </div>
         </>
     )
 }

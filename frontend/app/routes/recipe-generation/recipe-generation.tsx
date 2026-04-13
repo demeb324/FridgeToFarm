@@ -80,7 +80,7 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                                         {recipe.usedIngredients.map((ing) => (
                                             <span
                                                 key={ing}
-                                                className="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5"
+                                                className="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5"
                                             >
                                                 {ing}
                                             </span>
@@ -89,7 +89,7 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                                 </div>
                                 <Link
                                     to={`/ai-recipe?${params.toString()}`}
-                                    className="mt-auto text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm rounded-base px-4 py-2 text-center"
+                                    className="mt-auto text-white bg-amber-500 hover:bg-amber-600 font-medium text-sm rounded-base px-4 py-2 text-center"
                                 >
                                     Make this recipe
                                 </Link>
@@ -108,7 +108,7 @@ export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
                                 <RecipeCard recipe={recipe} reviews={[]}/>
                                 <Link
                                     to={`/recipe/${recipe.id}`}
-                                    className="text-white bg-blue-600 hover:bg-blue-700 font-medium text-sm rounded-base px-4 py-2"
+                                    className="text-white bg-amber-500 hover:bg-amber-600 font-medium text-sm rounded-base px-4 py-2"
                                 >
                                     Make this recipe
                                 </Link>
