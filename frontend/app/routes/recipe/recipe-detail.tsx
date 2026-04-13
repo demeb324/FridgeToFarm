@@ -16,7 +16,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
 
     const session = await getSession(request.headers.get("Cookie"))
     const user = session.has("user") ? session.get("user") : null
-    const reviews = await getReviewsByRecipeId(params.id)
+    const reviews = await getReviewsByRecipeId(params.id) ?? []
 
     return {recipe, reviews, user}
 }
@@ -89,7 +89,7 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
             <section className="mb-10">
                 <h2 className="font-bold text-2xl mb-4">Ingredients</h2>
                 <ul className="list-disc list-inside space-y-1">
-                    {recipe.ingredients.map((ing, i) => (
+                    {(recipe.ingredients ?? []).map((ing, i) => (
                         <li key={i} className="text-body">
                             {ing.amount} {ing.units} {ing.name}
                         </li>
@@ -100,7 +100,7 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
             <section className="mb-10">
                 <h2 className="font-bold text-2xl mb-4">Instructions</h2>
                 <ol className="space-y-6">
-                    {recipe.instructions.map((step) => (
+                    {(recipe.instructions ?? []).map((step) => (
                         <li key={step.stepNumber} className="flex gap-4">
                             <span className="font-bold text-amber-600 text-lg w-6 shrink-0">{step.stepNumber}</span>
                             <p className="text-body">{step.instruction}</p>
@@ -139,11 +139,18 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
                     <div className="space-y-6">
                         {reviews.map((review: Review) => (
                             <div key={`${review.recipeId}-${review.userId}`} className="border border-default-medium rounded-base p-4">
-                                <Rating className="mb-2">
-                                    {Array.from({length: review.rating}, (_, i) => (
-                                        <RatingStar key={i}/>
-                                    ))}
-                                </Rating>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-semibold text-sm">{review.username ?? 'Anonymous'}</span>
+                                    <Rating>
+                                        {Array.from({length: review.rating}, (_, i) => (
+                                            <RatingStar key={`f-${i}`} filled />
+                                        ))}
+                                        {Array.from({length: 5 - review.rating}, (_, i) => (
+                                            <RatingStar key={`e-${i}`} filled={false} />
+                                        ))}
+                                    </Rating>
+                                    <span className="text-sm text-body">{review.rating}/5</span>
+                                </div>
                                 <p className="text-body mb-1">{review.body}</p>
                                 {review.createdAt && (
                                     <p className="text-body text-xs">{new Date(review.createdAt).toLocaleDateString()}</p>
@@ -212,6 +219,12 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
 
             {user && hasReviewed && (
                 <p className="text-body italic">You have already reviewed this recipe.</p>
+            )}
+
+            {!user && (
+                <p className="text-body italic">
+                    <a href="/login" className="text-blue-600 underline hover:no-underline">Log in</a> to leave a review
+                </p>
             )}
         </div>
     )
