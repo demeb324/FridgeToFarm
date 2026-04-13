@@ -24,6 +24,10 @@ export async function loader({ request }: Route.LoaderArgs) {
         headers: { Cookie: cookie, Authorization: authorization },
     })
 
+    if (!response.ok) {
+        return { user, friends: [] as PublicUser[], pendingRequests: [] as PublicUser[] }
+    }
+
     const result = await response.json()
     const friends: PublicUser[] = result?.data?.friends ?? []
     const pendingRequests: PublicUser[] = result?.data?.pendingRequests ?? []
@@ -53,6 +57,9 @@ export async function action({ request }: Route.ActionArgs) {
             },
             body: JSON.stringify({ email, requestorId }),
         })
+        if (!response.ok) {
+            return { message: "Failed to send friend request", status: response.status, intent: "sendFriendRequest" }
+        }
         const result = await response.json()
         return { message: result.message, status: result.status, intent: "sendFriendRequest" }
     }
@@ -70,6 +77,9 @@ export async function action({ request }: Route.ActionArgs) {
             method: "PUT", headers,
             body: JSON.stringify({ requestorId }),
         })
+        if (!response.ok) {
+            return { message: "Failed to accept friend request", status: response.status, intent: "acceptFriend" }
+        }
         const result = await response.json()
         return { message: result.message, status: result.status, intent: "acceptFriend" }
     }
@@ -79,6 +89,9 @@ export async function action({ request }: Route.ActionArgs) {
             method: "DELETE", headers,
             body: JSON.stringify({ requestorId }),
         })
+        if (!response.ok) {
+            return { message: "Failed to decline friend request", status: response.status, intent: "declineFriend" }
+        }
         const result = await response.json()
         return { message: result.message, status: result.status, intent: "declineFriend" }
     }
