@@ -1,6 +1,7 @@
 import {RecipeRating} from "~/components/recipe-rating";
 import type {Recipe} from "~/utils/models/recipe.model";
 import type {Review} from "~/utils/models/review.model";
+import {Link} from "react-router";
 
 export function RecipeCard(props: {recipe: Recipe, reviews: Review[]}) {
     const {recipe, reviews} = props
@@ -8,7 +9,7 @@ export function RecipeCard(props: {recipe: Recipe, reviews: Review[]}) {
     return (
         <>
 
-            <div className="md:mx-0 mx-16 flex flex-col">
+            <Link to={`/recipe/${recipe.id}`} className="md:mx-0 mx-16 flex flex-col hover:opacity-80 transition-opacity">
                 <div className="md:mx-0 w-60 mx-16">
                     <img className="mb-2" src={recipe.imageUrl ?? "./public/image400.png"} alt={recipe.title}/>
                 </div>
@@ -16,7 +17,7 @@ export function RecipeCard(props: {recipe: Recipe, reviews: Review[]}) {
                 <div className="flex justify-center w-full mb-8">
                     <RecipeRating reviews={reviews}/>
                 </div>
-            </div>
+            </Link>
 
         </>
     )

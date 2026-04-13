@@ -18,6 +18,7 @@ export const ReviewSchema = z.object({
     createdAt: z.date('please provide a review date')
         .nullable(),
     rating: z.number('please provide a review rating number'),
+    username: z.string().optional(),
 })
 /**
  * review type inferred from schema
@@ -45,9 +46,11 @@ export async function insertReview(review: Review): Promise<string> {
 
 export async function selectReviewByRecipeId(recipeId:string): Promise<Review[]> {
     const rowList = await sql`
-SELECT recipe_id, user_id, body, created_at, rating
-FROM review 
-WHERE recipe_id = ${recipeId}
+SELECT rv.recipe_id, rv.user_id, rv.body, rv.created_at, rv.rating, u.username
+FROM review rv
+JOIN "user" u ON rv.user_id = u.id
+WHERE rv.recipe_id = ${recipeId}
+ORDER BY rv.created_at DESC
        `
     // Enforce that the result is an array of one review, or null
     return ReviewSchema.array().parse(rowList)

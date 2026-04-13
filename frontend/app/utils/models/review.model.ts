@@ -9,6 +9,7 @@ export const ReviewSchema = z.object({
     createdAt: z.date('please provide a review date')
         .nullable(),
     rating: z.number('please provide a review rating number'),
+    username: z.string().optional(),
 })
 /**
  * review type inferred from schema
@@ -56,7 +57,7 @@ export async function getReviewsByRecipeId(recipeId: string): Promise<Review[]> 
         throw new Error(`Failed to fetch reviews for recipe ${recipeId}`)
     }
     const result: Status = await response.json()
-    return result.data as Review[]
+    return (result.data as Review[]) ?? []
 }
 
 export async function postReview(review: { recipeId: string, userId: string, body: string, rating: number, createdAt: null }, authorization: string, cookie: string): Promise<Status> {

@@ -61,16 +61,9 @@ export async function selectRecipeById(id: string): Promise<Recipe | null> {
         SELECT id, user_id, calories, carbs, cook_time, cuisine, fat_content, image_url, instructions, ingredients, meal_category, prep_time, protein, servings, title, total_time
         FROM recipe
         WHERE id = ${id}`
-    
-    // Parse JSONB columns from database (postgres library returns them as objects)
-    const parsedRows = rowList.map((row: any) => ({
-        ...row,
-        instructions: JSON.parse(row.instructions),
-        ingredients: JSON.parse(row.ingredients)
-    }))
-    
+
     // Enforce that the result is an array of one recipe, or null
-    const result = recipeSchema.array().max(1).parse(parsedRows)
+    const result = recipeSchema.array().max(1).parse(rowList)
     return result[0] ?? null
 }
 
@@ -92,15 +85,8 @@ export async function selectRecipesByUserId(userId: string): Promise<Recipe[]> {
         FROM recipe
         WHERE user_id = ${userId}`
 
-    // Parse JSONB columns from database (postgres library returns them as objects)
-    const parsedRows = rowList.map((row: any) => ({
-        ...row,
-        instructions: JSON.parse(row.instructions),
-        ingredients: JSON.parse(row.ingredients)
-    }))
-
     // Enforce that the result is an array of one recipe, or null
-    return recipeSchema.array().parse(parsedRows)
+    return recipeSchema.array().parse(rowList)
 
 }
 
@@ -121,8 +107,11 @@ export async function selectRecipesByIngredient(ingredient: string): Promise<Rec
 
 
 export async function selectAllRecipes(): Promise<Recipe[]> {
-    const rowList = await sql`SELECT id, user_id, calories, carbs, cook_time, cuisine, fat_content, image_url, instructions, ingredients, meal_category, prep_time, protein, servings, title, total_time
-        FROM recipe
+    const rowList = await sql`SELECT r.id, r.user_id, r.calories, r.carbs, r.cook_time, r.cuisine, r.fat_content, r.image_url, r.instructions, r.ingredients, r.meal_category, r.prep_time, r.protein, r.servings, r.title, r.total_time
+        FROM recipe r
+        LEFT JOIN review rv ON r.id = rv.recipe_id
+        GROUP BY r.id
+        ORDER BY COALESCE(AVG(rv.rating), 0) DESC
         `
 
     // Enforce that the result is an array of one recipe, or null
