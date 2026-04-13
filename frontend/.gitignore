@@ -27,3 +27,5 @@ project.env
 .env.development
 
 **/._*.*
+
+/frontend/.env.development
