@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {getRecipesByCuisineAndMealCategory, type Recipe} from "~/utils/models/recipe.model";
+import {fetchUserById} from "~/utils/models/user.model";
+import {getRecipeReviews} from "~/utils/models/review.model";
 import type {Route} from "./+types/recipe-generation";
 import {RecipeCard} from "~/components/recipeCard";
 import {Link} from "react-router";
@@ -36,6 +38,12 @@ async function fetchAiSuggestions(
     return JSON.parse(extractJson(text ?? '[]'))
 }
 
+const AI_CARD_BG = [
+    "bg-amber-50",
+    "bg-green-50",
+    "bg-blue-50",
+]
+
 export async function loader({request}: Route.LoaderArgs) {
     const url = new URL(request.url)
     const ingredients = url.searchParams.getAll('ingredients')
@@ -47,86 +55,141 @@ export async function loader({request}: Route.LoaderArgs) {
         getRecipesByCuisineAndMealCategory(cuisine, mealType),
     ])
 
-    return {aiSuggestions, dbRecipes, ingredients, mealType, cuisine}
+    const reviewsMap = await getRecipeReviews(dbRecipes)
+    const reviews = Object.fromEntries(reviewsMap)
+
+    const uniqueUserIds = [...new Set(dbRecipes.map((r: Recipe) => r.userId))]
+    const userResults = await Promise.all(uniqueUserIds.map(id => fetchUserById(id)))
+    const usernameMap: Record<string, string> = {}
+    uniqueUserIds.forEach((id, i) => {
+        const u = userResults[i]
+        if (u) usernameMap[id] = u.username
+    })
+
+    return {aiSuggestions, dbRecipes, reviews, usernameMap, ingredients, mealType, cuisine}
 }
 
 export default function RecipeGeneration({loaderData}: Route.ComponentProps) {
-    const {aiSuggestions, dbRecipes, ingredients, mealType, cuisine} = loaderData
+    const {aiSuggestions, dbRecipes, reviews, usernameMap, ingredients, mealType, cuisine} = loaderData
 
     return (
-        <>
-            <h1 className="mx-4 md:mx-16mt-16 mb-2 font-bold text-3xl">
-                Recipe Suggestions
-            </h1>
-            <p className="mx-4 md:mx-16mb-12 text-body">
-                {[cuisine, mealType].filter(Boolean).join(' · ')}
-            </p>
+        <div className="max-w-5xl mx-auto px-4 py-10">
 
-            <section className="mx-4 md:mx-16mb-16">
-                <h2 className="font-bold text-2xl mb-6">AI Suggested Recipes</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 grid-cols-1 gap-6">
-                    {aiSuggestions.map((recipe) => {
+            {/* ── Header ── */}
+            <div className="flex items-start justify-between mb-2 flex-wrap gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Recipe suggestions</h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {[cuisine, mealType].filter(Boolean).join(' · ')} · based on {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''}
+                    </p>
+                </div>
+                <Link
+                    to="/#upload"
+                    className="flex items-center gap-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shrink-0"
+                >
+                    Upload new photo <span aria-hidden>↗</span>
+                </Link>
+            </div>
+
+            {/* ── Ingredient context pills ── */}
+            <div className="flex flex-wrap gap-1.5 mt-4 mb-8">
+                {ingredients.map(ing => (
+                    <span key={ing} className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium capitalize">
+                        {ing}
+                    </span>
+                ))}
+            </div>
+
+            {/* ── AI Suggestions ── */}
+            <section className="mb-12">
+                <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-6">
+                    AI suggested recipes
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {aiSuggestions.map((recipe, i) => {
                         const params = new URLSearchParams()
                         params.set('title', recipe.title)
                         params.set('cuisine', cuisine)
                         params.set('mealType', mealType)
-                        ingredients.forEach(i => params.append('ingredients', i))
+                        ingredients.forEach(ing => params.append('ingredients', ing))
+
                         return (
-                            <div
-                                key={recipe.title}
-                                className="border border-default-medium rounded-base p-6 flex flex-col gap-3 bg-neutral-secondary-medium"
-                            >
-                                <h3 className="font-semibold text-lg text-heading">{recipe.title}</h3>
-                                <p className="text-body text-sm">{recipe.description}</p>
-                                <div className="flex gap-4 text-sm text-body">
-                                    <span>Prep: {recipe.prepTime}</span>
-                                    <span>Cook: {recipe.cookTime}</span>
+                            <div key={recipe.title} className="border border-gray-200 rounded-2xl overflow-hidden bg-white flex flex-col">
+                                {/* Image area */}
+                                <div className={`${AI_CARD_BG[i % AI_CARD_BG.length]} h-44 flex items-center justify-center`}>
+                                    <span className="text-5xl" aria-hidden>🍳</span>
                                 </div>
-                                <div>
-                                    <p className="text-xs font-medium text-body mb-1">Uses from your fridge:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                        {recipe.usedIngredients.map((ing) => (
-                                            <span
-                                                key={ing}
-                                                className="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5"
-                                            >
-                                                {ing}
-                                            </span>
-                                        ))}
+
+                                {/* Content */}
+                                <div className="px-4 pt-4 pb-5 flex flex-col gap-2 flex-1">
+                                    <h3 className="font-semibold text-gray-900 text-sm leading-snug">{recipe.title}</h3>
+                                    <p className="text-xs text-gray-500 leading-snug line-clamp-2">{recipe.description}</p>
+
+                                    {/* Time tags */}
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                        <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                                            Prep {recipe.prepTime}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium">
+                                            Cook {recipe.cookTime}
+                                        </span>
+                                    </div>
+
+                                    {/* Used ingredients */}
+                                    {recipe.usedIngredients.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {recipe.usedIngredients.map(ing => (
+                                                <span key={ing} className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs capitalize border border-amber-100">
+                                                    {ing}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Footer */}
+                                    <div className="mt-auto pt-3">
+                                        <Link
+                                            to={`/ai-recipe?${params.toString()}`}
+                                            className="block w-full text-center text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg px-4 py-2 transition-colors"
+                                        >
+                                            Make this recipe →
+                                        </Link>
                                     </div>
                                 </div>
-                                <Link
-                                    to={`/ai-recipe?${params.toString()}`}
-                                    className="mt-auto text-white bg-amber-500 hover:bg-amber-600 font-medium text-sm rounded-base px-4 py-2 text-center"
-                                >
-                                    Make this recipe
-                                </Link>
                             </div>
                         )
                     })}
                 </div>
             </section>
 
-            <section className="mx-4 md:mx-16mb-28">
-                <h2 className="font-bold text-2xl mb-6">From Our Collection</h2>
+            {/* ── From Our Collection ── */}
+            <section>
+                <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-6">
+                    From our collection
+                </p>
                 {dbRecipes.length > 0 ? (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-16 justify-items-center">
-                        {dbRecipes.map((recipe: Recipe) => (
-                            <div key={recipe.id} className="flex flex-col items-center gap-3">
-                                <RecipeCard recipe={recipe} reviews={[]}/>
-                                <Link
-                                    to={`/recipe/${recipe.id}`}
-                                    className="text-white bg-amber-500 hover:bg-amber-600 font-medium text-sm rounded-base px-4 py-2"
-                                >
-                                    Make this recipe
-                                </Link>
-                            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {dbRecipes.map((recipe: Recipe, i: number) => (
+                            <RecipeCard
+                                key={recipe.id}
+                                recipe={recipe}
+                                reviews={reviews[recipe.id] ?? []}
+                                index={i}
+                                username={usernameMap[recipe.userId]}
+                            />
                         ))}
                     </div>
                 ) : (
-                    <p className="text-body">No saved recipes found for {[cuisine, mealType].filter(Boolean).join(' ')}.</p>
+                    <div className="border border-gray-200 rounded-2xl p-10 text-center bg-white">
+                        <p className="text-sm text-gray-500">
+                            No saved recipes found for{' '}
+                            <span className="font-medium text-gray-700">{[cuisine, mealType].filter(Boolean).join(' ')}</span>.
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">Try the AI suggestions above!</p>
+                    </div>
                 )}
             </section>
-        </>
+
+        </div>
     )
 }
