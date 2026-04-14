@@ -77,6 +77,14 @@ export async function getAllRecipes(): Promise<Recipe[]> {
     return recipes
 }
 
+export async function getRecipesByUserId(userId: string): Promise<Recipe[]> {
+    const url = new URL(`${process.env.REST_API_URL}/recipe/userId/${encodeURIComponent(userId)}`)
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Failed to fetch recipes: ${response.statusText}`)
+    const data = await response.json()
+    return data.data as Recipe[]
+}
+
 export async function postRecipe(recipe: Recipe, authorization: string, cookie: string): Promise<Status> {
     const response = await fetch(`${process.env.REST_API_URL}/recipe`, {
         method: 'POST',
