@@ -54,6 +54,13 @@ export type SignUpUser = z.infer<typeof SignUpUserSchema>
 
 
 
+export async function fetchUserById(userId: string): Promise<{ username: string } | null> {
+    const response = await fetch(`${process.env.REST_API_URL}/user/${encodeURIComponent(userId)}`)
+    const result = await response.json()
+    if (result.status !== 200 || !result.data) return null
+    return result.data
+}
+
  export async function postSignUp(data: SignUpUser ) : Promise<Status> {
     const modifiedSignUpUser = {id: uuid(), ...data }
      const response = await fetch(`${process.env.REST_API_URL}/sign-up`, {

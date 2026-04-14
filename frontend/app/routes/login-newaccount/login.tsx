@@ -9,14 +9,14 @@ import {getValidatedFormData, useRemixForm} from "remix-hook-form";
 import {jwtDecode} from "jwt-decode";
 import {UserSchema} from "~/utils/models/user.model";
 import {FieldError} from "~/components/FieldError";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {StatusMessage} from "~/components/StatusMessage";
-import {Eye, EyeOff} from "lucide-react";
+import {Logo} from "~/components/Logo";
 
 export function meta({}: Route.MetaArgs) {
     return [
-        { title: "New React Router App" },
-        { name: "description", content: "Welcome to React Router!" },
+        { title: "Sign In — Last Minute Meals" },
+        { name: "description", content: "Sign in or create an account to start cooking." },
     ];
 }
 
@@ -94,41 +94,12 @@ export async function action({request}: Route.ActionArgs): Promise<FormActionRes
     return redirect(redirectTo, {headers: responseHeaders})
 }
 
-function EmailIcon() {
-    return (
-        <svg className="w-4 h-4 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-             width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" strokeLinecap="round" strokeWidth="2"
-                  d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
-        </svg>
-    )
-}
-
-function UserIcon() {
-    return (
-        <svg className="w-4 h-4 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-             width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" strokeLinecap="round" strokeWidth="2"
-                  d="M12 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-6 9a6 6 0 0 1 12 0H6Z"/>
-        </svg>
-    )
-}
-
-function LockIcon() {
-    return (
-        <svg className="w-4 h-4 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-             width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" strokeLinecap="round" strokeWidth="2"
-                  d="M12 14v3m-3-6V7a3 3 0 1 1 6 0v4m-8 0h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"/>
-        </svg>
-    )
-}
-
 export default function Login() {
     const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
     const [showPassword, setShowPassword] = useState(false)
     const [showRegisterPassword, setShowRegisterPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [rememberMe, setRememberMe] = useState(false)
 
     // Login: main route Form + useActionData — redirect on success works naturally
     const loginForm = useRemixForm<SignIn>({ mode: 'onSubmit', resolver: signInResolver })
@@ -139,172 +110,258 @@ export default function Login() {
     const registerForm = useRemixForm<SignUpUser>({ mode: 'onSubmit', resolver: signUpResolver, fetcher: registerFetcher })
     const registerActionData = registerFetcher.data as FormActionResponse | undefined
 
-    const tabBase = "flex-1 py-2.5 text-sm font-medium rounded-t-lg transition-colors"
-    const tabActive = "bg-white text-amber-600 border-b-2 border-amber-500"
-    const tabInactive = "bg-neutral-secondary-medium text-body hover:text-heading"
+    useEffect(() => {
+        if (registerActionData?.success && registerActionData?.intent === 'register') {
+            registerForm.reset()
+        }
+    }, [registerActionData])
+
+    const inputClass = "block w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 placeholder:text-gray-400 transition-colors"
+    const inputErrorClass = "border-red-400 focus:ring-red-400 focus:border-red-400"
+    const labelClass = "block text-sm font-medium text-gray-700 mb-1.5"
+
+    const features = [
+        'AI-powered ingredient recognition',
+        'Hundreds of matched recipes',
+        'Share meals with friends',
+        'Track your cooking history',
+    ]
 
     return (
-        <>
-            <h1 className="my-8 text-center font-bold text-4xl">Welcome</h1>
+        <div className="flex min-h-[calc(100vh-3.5rem)]">
 
-            <div className="mx-4">
-                {/* Tabs */}
-                <div className="container mx-auto flex border-b border-default-medium mb-6">
-                    <button
-                        type="button"
-                        className={`${tabBase} ${activeTab === 'login' ? tabActive : tabInactive}`}
-                        onClick={() => setActiveTab('login')}
-                    >
-                        Log In
-                    </button>
-                    <button
-                        type="button"
-                        className={`${tabBase} ${activeTab === 'register' ? tabActive : tabInactive}`}
-                        onClick={() => setActiveTab('register')}
-                    >
-                        Create Account
-                    </button>
+            {/* ── Left panel ── */}
+            <div className="hidden lg:flex lg:w-2/5 flex-col justify-between p-10 bg-[#2a2a27]">
+
+                {/* Logo */}
+                <div className="flex items-center gap-3">
+                    <Logo size={38} />
+                    <span className="text-white font-semibold text-base tracking-tight">lastminutemeals</span>
                 </div>
 
-                {/* Login Form */}
-                {activeTab === 'login' && (
-                    <Form onSubmit={loginForm.handleSubmit} action="?intent=login" className="container mx-auto space-y-6" method="POST">
-                        <div>
-                            <div className="relative my-8">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                    <EmailIcon />
-                                </div>
+                {/* Marketing copy */}
+                <div className="space-y-6">
+                    <h2 className="text-4xl font-bold text-white leading-tight">
+                        Snap your fridge.<br />Cook something great.
+                    </h2>
+                    <p className="text-gray-400 text-base leading-relaxed">
+                        Upload a photo of your ingredients and get recipe matches in seconds.
+                    </p>
+                    <ul className="space-y-3">
+                        {features.map((item) => (
+                            <li key={item} className="flex items-center gap-3 text-gray-300 text-sm">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                {item}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* Footer */}
+                <p className="text-gray-500 text-xs">© 2026 Last Minute Meals</p>
+            </div>
+
+            {/* ── Right panel ── */}
+            <div className="flex-1 flex flex-col justify-center px-8 py-12 sm:px-16 bg-white">
+                <div className="w-full max-w-md mx-auto">
+
+                    {/* Heading */}
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1">Welcome back</h1>
+                    <p className="text-sm text-gray-500 mb-8">
+                        No account?{' '}
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('register')}
+                            className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline underline-offset-2 transition-colors"
+                        >
+                            Sign up free
+                        </button>
+                    </p>
+
+                    {/* Tab switcher */}
+                    <div className="flex rounded-lg bg-stone-100 p-1 mb-8 gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('login')}
+                            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-150 ${
+                                activeTab === 'login'
+                                    ? 'bg-white text-gray-900 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            Sign in
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('register')}
+                            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-150 ${
+                                activeTab === 'register'
+                                    ? 'bg-white text-gray-900 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            Create account
+                        </button>
+                    </div>
+
+                    {/* ── Login Form ── */}
+                    {activeTab === 'login' && (
+                        <Form onSubmit={loginForm.handleSubmit} action="?intent=login" className="space-y-5" method="POST">
+
+                            {/* Email */}
+                            <div>
+                                <label htmlFor="login-email" className={labelClass}>Email</label>
                                 <input
+                                    id="login-email"
                                     type="text"
                                     {...loginForm.register('email')}
-                                    className={`block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body
-                                        ${loginForm.formState.errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
-                                    placeholder="name@example.com"
+                                    placeholder="you@example.com"
+                                    className={`${inputClass} ${loginForm.formState.errors.email ? inputErrorClass : ''}`}
                                 />
-                                <FieldError error={loginForm.formState.errors} field={'email'} />
+                                <FieldError error={loginForm.formState.errors} field="email" />
                             </div>
 
-                            <div className="relative my-8">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                    <LockIcon />
+                            {/* Password */}
+                            <div>
+                                <label htmlFor="login-password" className={labelClass}>Password</label>
+                                <div className="relative">
+                                    <input
+                                        id="login-password"
+                                        {...loginForm.register('password')}
+                                        type={showPassword ? 'text' : 'password'}
+                                        placeholder="Enter your password"
+                                        className={`${inputClass} pr-14 ${loginForm.formState.errors.password ? inputErrorClass : ''}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(v => !v)}
+                                        className="absolute inset-y-0 right-3 flex items-center text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                                    >
+                                        {showPassword ? 'Hide' : 'Show'}
+                                    </button>
                                 </div>
-                                <label htmlFor="login-password" className="sr-only">Password</label>
-                                <input
-                                    {...loginForm.register('password')}
-                                    type={showPassword ? "text" : "password"}
-                                    id="login-password"
-                                    placeholder="Enter password"
-                                    className="block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                                />
+                                <FieldError error={loginForm.formState.errors} field="password" />
+                            </div>
+
+                            {/* Remember me + Forgot password */}
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={e => setRememberMe(e.target.checked)}
+                                        className="w-4 h-4 rounded border-gray-300 accent-emerald-600"
+                                    />
+                                    <span className="text-sm text-gray-600">Remember me</span>
+                                </label>
                                 <button
                                     type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                    className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline underline-offset-2 transition-colors"
                                 >
-                                    {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
+                                    Forgot password?
                                 </button>
                             </div>
 
+                            {/* Submit */}
                             <button
                                 type="submit"
-                                className="mt-6 text-white bg-amber-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+                                className="w-full py-2.5 px-4 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
                             >
-                                Log In
+                                Sign in
                             </button>
-                        </div>
-                        <StatusMessage actionData={loginActionData} />
-                    </Form>
-                )}
 
-                {/* Register Form */}
-                {activeTab === 'register' && (
-                    <Form onSubmit={registerForm.handleSubmit} action="?intent=register" className="container mx-auto space-y-4" method="POST">
-                        <div>
-                            <div className="relative my-8">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                    <UserIcon />
-                                </div>
+                            <StatusMessage actionData={loginActionData} />
+                        </Form>
+                    )}
+
+                    {/* ── Register Form ── */}
+                    {activeTab === 'register' && (
+                        <Form onSubmit={registerForm.handleSubmit} action="?intent=register" className="space-y-5" method="POST">
+
+                            {/* Username */}
+                            <div>
+                                <label htmlFor="reg-username" className={labelClass}>Username</label>
                                 <input
+                                    id="reg-username"
                                     type="text"
                                     {...registerForm.register('username')}
-                                    className={`block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body
-                                        ${registerForm.formState.errors.username ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
-                                    placeholder="Username"
+                                    placeholder="Your username"
+                                    className={`${inputClass} ${registerForm.formState.errors.username ? inputErrorClass : ''}`}
                                 />
-                                <FieldError error={registerForm.formState.errors} field={'username'} />
+                                <FieldError error={registerForm.formState.errors} field="username" />
                             </div>
 
-                            <div className="relative my-8">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                    <EmailIcon />
-                                </div>
+                            {/* Email */}
+                            <div>
+                                <label htmlFor="reg-email" className={labelClass}>Email</label>
                                 <input
+                                    id="reg-email"
                                     type="text"
                                     {...registerForm.register('email')}
-                                    className={`block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body
-                                        ${registerForm.formState.errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
-                                    placeholder="name@example.com"
+                                    placeholder="you@example.com"
+                                    className={`${inputClass} ${registerForm.formState.errors.email ? inputErrorClass : ''}`}
                                 />
-                                <FieldError error={registerForm.formState.errors} field={'email'} />
+                                <FieldError error={registerForm.formState.errors} field="email" />
                             </div>
 
-                            <div className="relative my-8">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                    <LockIcon />
+                            {/* Password */}
+                            <div>
+                                <label htmlFor="reg-password" className={labelClass}>Password</label>
+                                <div className="relative">
+                                    <input
+                                        id="reg-password"
+                                        {...registerForm.register('password')}
+                                        type={showRegisterPassword ? 'text' : 'password'}
+                                        placeholder="Min. 8 characters"
+                                        className={`${inputClass} pr-14 ${registerForm.formState.errors.password ? inputErrorClass : ''}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRegisterPassword(v => !v)}
+                                        className="absolute inset-y-0 right-3 flex items-center text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                                    >
+                                        {showRegisterPassword ? 'Hide' : 'Show'}
+                                    </button>
                                 </div>
-                                <label htmlFor="register-password" className="sr-only">Password</label>
-                                <input
-                                    {...registerForm.register('password')}
-                                    type={showRegisterPassword ? "text" : "password"}
-                                    id="register-password"
-                                    placeholder="Password (min 8 characters)"
-                                    className={`block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body
-                                        ${registerForm.formState.errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                >
-                                    {showRegisterPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
-                                </button>
-                                <FieldError error={registerForm.formState.errors} field={'password'} />
+                                <FieldError error={registerForm.formState.errors} field="password" />
                             </div>
 
-                            <div className="relative my-8">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                    <LockIcon />
+                            {/* Confirm password */}
+                            <div>
+                                <label htmlFor="reg-password-confirm" className={labelClass}>Confirm password</label>
+                                <div className="relative">
+                                    <input
+                                        id="reg-password-confirm"
+                                        {...registerForm.register('passwordConfirm')}
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        placeholder="Repeat password"
+                                        className={`${inputClass} pr-14 ${registerForm.formState.errors.passwordConfirm ? inputErrorClass : ''}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(v => !v)}
+                                        className="absolute inset-y-0 right-3 flex items-center text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                                    >
+                                        {showConfirmPassword ? 'Hide' : 'Show'}
+                                    </button>
                                 </div>
-                                <label htmlFor="register-password-confirm" className="sr-only">Confirm Password</label>
-                                <input
-                                    {...registerForm.register('passwordConfirm')}
-                                    type={showConfirmPassword ? "text" : "password"}
-                                    id="register-password-confirm"
-                                    placeholder="Confirm password"
-                                    className={`block w-full ps-9 pe-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body
-                                        ${registerForm.formState.errors.passwordConfirm ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                >
-                                    {showConfirmPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
-                                </button>
-                                <FieldError error={registerForm.formState.errors} field={'passwordConfirm'} />
+                                <FieldError error={registerForm.formState.errors} field="passwordConfirm" />
                             </div>
 
+                            {/* Submit */}
                             <button
                                 type="submit"
-                                className="mt-6 text-white bg-amber-500 box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+                                className="w-full py-2.5 px-4 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
                             >
-                                Create Account
+                                Create account
                             </button>
-                        </div>
-                        <StatusMessage actionData={registerActionData} />
-                    </Form>
-                )}
+
+                            <StatusMessage actionData={registerActionData} />
+                        </Form>
+                    )}
+
+                </div>
             </div>
-        </>
+        </div>
     )
 }

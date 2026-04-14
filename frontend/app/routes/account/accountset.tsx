@@ -64,9 +64,9 @@ export async function action({ request }: Route.ActionArgs) {
             headers: { "Content-Type": "application/json", Cookie: request.headers.get("Cookie") ?? "" },
             body: JSON.stringify({
                 bio: newBio,
-                currentPassword: formData.get("currentPassword"),
-                newPassword: formData.get("newPassword"),
-                confirmPassword: formData.get("confirmPassword"),
+                currentPassword: formData.get("currentPassword") ?? "",
+                newPassword: formData.get("newPassword") ?? "",
+                confirmPassword: formData.get("confirmPassword") ?? "",
             }),
         });
         const result = await response.json();

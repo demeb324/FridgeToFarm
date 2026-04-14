@@ -2,6 +2,7 @@ import type {Route} from "./+types/home"
 import {RecipeCard} from "~/components/recipeCard";
 import {getAllRecipes} from "../../utils/models/recipe.model";
 import {getRecipeReviews} from "~/utils/models/review.model";
+import {fetchUserById} from "~/utils/models/user.model";
 import type {Recipe} from "~/utils/models/recipe.model";
 import {Form, Link, redirect, useActionData} from "react-router";
 import {useEffect, useRef, useState} from "react";
@@ -10,6 +11,7 @@ import {
     parseFormData,
 } from "@remix-run/form-data-parser";
 import {fileStorage, getStorageKey} from "~/utils/image-storage.server";
+import {getSession} from "~/utils/session.server";
 import {v4} from "uuid";
 
 export function meta({}: Route.MetaArgs) {
@@ -32,6 +34,10 @@ export async function action({request}: Route.ActionArgs) {
     if (!fileStored) {
         return {error: 'No image received — please select a file and try again.'}
     }
+    const session = await getSession(request.headers.get('Cookie'))
+    if (!session.has('user')) {
+        return redirect(`/login?redirectTo=${encodeURIComponent(`/items-list/${id}`)}`)
+    }
     return redirect(`/items-list/${id}`)
 }
 
@@ -39,7 +45,16 @@ export async function loader() {
     const recipes: Recipe[] = await getAllRecipes()
     const reviewsMap = await getRecipeReviews(recipes)
     const reviews = Object.fromEntries(reviewsMap)
-    return {recipes, reviews}
+
+    const uniqueUserIds = [...new Set(recipes.map(r => r.userId))]
+    const userResults = await Promise.all(uniqueUserIds.map(id => fetchUserById(id)))
+    const usernameMap: Record<string, string> = {}
+    uniqueUserIds.forEach((id, i) => {
+        const u = userResults[i]
+        if (u) usernameMap[id] = u.username
+    })
+
+    return {recipes, reviews, usernameMap}
 }
 
 export default function Home({loaderData}: Route.ComponentProps) {
@@ -110,7 +125,7 @@ export default function Home({loaderData}: Route.ComponentProps) {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const {recipes, reviews} = loaderData
+    const {recipes, reviews, usernameMap} = loaderData
 
     return (
         <>
@@ -246,9 +261,9 @@ export default function Home({loaderData}: Route.ComponentProps) {
             {/* ── TOP RECIPES ──────────────────────────────── */}
             <section className="mt-20 mb-16 px-4 md:px-16 max-w-5xl mx-auto">
                 <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-10">Top recipes</p>
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 grid-cols-1 gap-8 justify-items-center">
-                    {recipes.map((recipe: Recipe) => (
-                        <RecipeCard recipe={recipe} key={recipe.id} reviews={reviews[recipe.id]} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {recipes.map((recipe: Recipe, i: number) => (
+                        <RecipeCard recipe={recipe} key={recipe.id} reviews={reviews[recipe.id]} index={i} username={usernameMap[recipe.userId]} />
                     ))}
                 </div>
             </section>

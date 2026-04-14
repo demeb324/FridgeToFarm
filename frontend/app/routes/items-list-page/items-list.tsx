@@ -38,14 +38,11 @@ export async function loader ({ params, request }:Route.LoaderArgs) {
     }
 
     const storageKey = getStorageKey(params.id);
-    console.log('[loader] looking up storage key:', storageKey)
     const file = await fileStorage.get(storageKey);
-    console.log('[loader] file found:', !!file)
 
     if (!file) {
         throw new Response("Image not found", { status: 404 });
     }
-    console.log('Calling Claude')
 
     const anthropic = new Anthropic({apiKey: process.env.ANTHROPIC_API_KEY})
     const base64ImageData = Buffer.from(await file.arrayBuffer()).toString("base64")
@@ -89,6 +86,8 @@ const resolver = zodResolver(ItemsSchema)
 
 type Items = z.infer<typeof ItemsSchema>
 
+const inputClass = "block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400"
+const labelClass = "block text-sm font-medium text-gray-700 mb-1.5"
 
 export default function ItemsList({params, loaderData}: Route.ComponentProps) {
     const {ingredients, ingredientsData, mealType, cuisine} = loaderData
@@ -130,143 +129,233 @@ export default function ItemsList({params, loaderData}: Route.ComponentProps) {
 
     const [selectValue, setSelectValue] = useState('')
     const [freeText, setFreeText] = useState('')
+    const [search, setSearch] = useState('')
+    const [showAddPanel, setShowAddPanel] = useState(false)
+
+    // Filter display list — removal uses stable field.id to find the real index
+    const filteredFields = fields.filter(f =>
+        f.value.toLowerCase().includes(search.toLowerCase())
+    )
+
+    const uploadedDate = new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
     return (
-        <>
-            <div className="flex w-full items-center justify-center">
-                <img src={`/api/image/${params.id}`} alt=""/>
-            </div>
+        <form onSubmit={handleSubmit}>
+            <div className="max-w-3xl mx-auto px-4 py-8">
 
-            <form onSubmit={handleSubmit}>
-                <h2 className="mx-4 md:mx-16mb-4 font-bold text-2xl">
-                    List of items on the picture
-                </h2>
-                <div className="mx-4 md:mx-16text-left">
-                    <ul className="list-none">
-                        {fields.map((field, index) => (
-                            <li key={field.id} className="flex items-center gap-2 text-lg py-1">
-                                <input type="hidden" {...register(`ingredients.${index}.value`)} />
-                                <span>{field.value}</span>
+                {/* ── Header ── */}
+                <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">My fridge</h1>
+                        <p className="text-sm text-gray-500 mt-1">Ingredients detected from your photo. Review, edit, then find recipes.</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setShowAddPanel(v => !v)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                        >
+                            + Add item
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1"
+                        >
+                            Find recipes <span aria-hidden>↗</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* ── Stats row ── */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                    <div className="border border-gray-200 rounded-xl px-4 py-4 bg-white">
+                        <p className="text-2xl font-bold text-gray-900">{fields.length}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Items detected</p>
+                    </div>
+                    <div className="border border-gray-200 rounded-xl px-4 py-4 bg-white">
+                        <p className="text-2xl font-bold text-gray-900">{uploadedDate}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Photo uploaded</p>
+                        <p className="text-xs text-gray-400">just now</p>
+                    </div>
+                    <div className="border border-gray-200 rounded-xl px-4 py-4 bg-white">
+                        <p className="text-2xl font-bold text-gray-400">—</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Recipe matches</p>
+                        <p className="text-xs text-gray-400">click Find recipes</p>
+                    </div>
+                </div>
+
+                {/* ── Photo banner ── */}
+                <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 flex items-center gap-4 mb-6">
+                    <img
+                        src={`/api/image/${params.id}`}
+                        alt="Uploaded fridge photo"
+                        className="h-16 w-16 rounded-lg object-cover shrink-0 border border-emerald-200"
+                    />
+                    <div>
+                        <p className="text-sm font-medium text-gray-800">Your fridge photo</p>
+                        <p className="text-xs text-gray-500 mt-0.5">AI scanned · {fields.length} ingredient{fields.length !== 1 ? 's' : ''} identified</p>
+                    </div>
+                </div>
+
+                {/* ── Search ── */}
+                <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search ingredients..."
+                    className={inputClass}
+                />
+
+                {/* ── Ingredient list ── */}
+                <div className="mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase">
+                            Detected ingredients · {fields.length}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setShowAddPanel(v => !v)}
+                            className="px-3 py-1 border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                        >
+                            + add
+                        </button>
+                    </div>
+
+                    {/* Add panel */}
+                    {showAddPanel && (
+                        <div className="border border-gray-200 rounded-xl p-4 mb-3 space-y-3 bg-gray-50">
+                            <div className="flex gap-2">
+                                <select
+                                    value={selectValue}
+                                    onChange={e => setSelectValue(e.target.value)}
+                                    className={inputClass}
+                                >
+                                    <option value="">Choose from list…</option>
+                                    {ingredientsData.map((ingredient: Ingredient) => (
+                                        <option key={ingredient.id} value={ingredient.nameIng}>
+                                            {ingredient.nameIng}
+                                        </option>
+                                    ))}
+                                </select>
                                 <button
                                     type="button"
-                                    onClick={() => remove(index)}
-                                    className="text-red-500 hover:text-red-700 font-bold leading-none"
-                                    aria-label={`Remove ${field.value}`}
+                                    onClick={() => {
+                                        if (selectValue && !fields.some(f => f.value === selectValue)) {
+                                            append({ value: selectValue })
+                                            setSelectValue('')
+                                        }
+                                    }}
+                                    className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
                                 >
-                                    ×
+                                    Add
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={freeText}
+                                    onChange={e => setFreeText(e.target.value)}
+                                    placeholder="Type an ingredient…"
+                                    className={inputClass}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const trimmed = freeText.trim()
+                                        if (trimmed && !fields.some(f => f.value === trimmed)) {
+                                            append({ value: trimmed })
+                                            setFreeText('')
+                                        }
+                                    }}
+                                    className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Hidden inputs for ALL fields so form submission is complete */}
+                    {fields.map((field, index) => (
+                        <input key={field.id} type="hidden" {...register(`ingredients.${index}.value`)} />
+                    ))}
+
+                    {/* Visible rows — filtered */}
+                    {filteredFields.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {filteredFields.map(field => {
+                                const realIndex = fields.findIndex(f => f.id === field.id)
+                                return (
+                                    <div key={field.id} className="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-colors">
+                                        <span className="text-base shrink-0" aria-hidden>🥗</span>
+                                        <span className="flex-1 text-sm font-medium text-gray-800 capitalize truncate">{field.value}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => remove(realIndex)}
+                                            aria-label={`Remove ${field.value}`}
+                                            className="w-5 h-5 rounded-full border border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-500 flex items-center justify-center text-xs transition-colors shrink-0"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-center text-sm text-gray-400 py-8 border border-gray-200 rounded-xl">
+                            {search ? 'No ingredients match your search.' : 'No ingredients yet.'}
+                        </p>
+                    )}
+
                     {errors.ingredients && (
-                        <p className="text-red-500 text-sm mt-1">{errors.ingredients.message}</p>
+                        <p className="text-red-500 text-sm mt-2">{errors.ingredients.message}</p>
                     )}
                 </div>
 
-                <h2 className="mx-4 md:mx-16mb-4 mt-8 font-bold text-2xl">
-                    Is this Everything? Add items:
-                </h2>
-
-                <div className="mx-4 md:mx-16max-w-lg space-y-4">
-                    <div className="flex gap-2 items-end">
-                        <select
-                            value={selectValue}
-                            onChange={(e) => setSelectValue(e.target.value)}
-                            className="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs"
-                        >
-                            <option value="">Choose an item</option>
-                            {ingredientsData.map((ingredient: Ingredient) => (
-                                <option key={ingredient.id} value={ingredient.nameIng}>
-                                    {ingredient.nameIng}
-                                </option>
-                            ))}
-                        </select>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (selectValue && !fields.some(f => f.value === selectValue)) {
-                                    append({ value: selectValue })
-                                    setSelectValue('')
-                                }
-                            }}
-                            className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none whitespace-nowrap"
-                        >
-                            Add
-                        </button>
-                    </div>
-
-                    <div className="flex gap-2 items-end">
-                        <input
-                            type="text"
-                            value={freeText}
-                            onChange={(e) => setFreeText(e.target.value)}
-                            placeholder="Type an ingredient not in the list..."
-                            className="block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const trimmed = freeText.trim()
-                                if (trimmed && !fields.some(f => f.value === trimmed)) {
-                                    append({ value: trimmed })
-                                    setFreeText('')
-                                }
-                            }}
-                            className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none whitespace-nowrap"
-                        >
-                            Add
-                        </button>
+                {/* ── Meal preferences ── */}
+                <div className="mt-8 border border-gray-200 rounded-xl p-5 bg-white">
+                    <p className="text-sm font-semibold text-gray-800 mb-4">Meal preferences</p>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass}>Meal type</label>
+                            <select {...register('mealType')} className={inputClass}>
+                                <option value="">Choose a meal type</option>
+                                <option value="breakfast">Breakfast</option>
+                                <option value="lunch">Lunch</option>
+                                <option value="dinner">Dinner</option>
+                                <option value="desert">Dessert</option>
+                            </select>
+                            {errors.mealType && (
+                                <p className="text-red-500 text-xs mt-1">{errors.mealType.message}</p>
+                            )}
+                        </div>
+                        <div>
+                            <label className={labelClass}>Cuisine</label>
+                            <select {...register('cuisine')} className={inputClass}>
+                                <option value="">Choose a cuisine</option>
+                                <option value="Chinese">Chinese</option>
+                                <option value="Mexican">Mexican</option>
+                                <option value="Middle Eastern">Middle Eastern</option>
+                                <option value="Barbeque">Barbeque</option>
+                            </select>
+                            {errors.cuisine && (
+                                <p className="text-red-500 text-xs mt-1">{errors.cuisine.message}</p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <h2 className="mx-4 md:mx-16mb-4 mt-8 font-bold text-2xl">
-                    What type of meal do you want to eat?
-                </h2>
-                <div className="mx-4 md:mx-16max-w-lg">
-                    <select
-                        {...register('mealType')}
-                        className="mt-4 block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                    >
-                        <option value="">Choose a meal type</option>
-                        <option value="breakfast">Breakfast</option>
-                        <option value="lunch">Lunch</option>
-                        <option value="dinner">Dinner</option>
-                        <option value="desert">Desert</option>
-                    </select>
-                    {errors.mealType && (
-                        <p className="text-red-500 text-sm mt-1">{errors.mealType.message}</p>
-                    )}
-                </div>
-
-                <h2 className="mx-4 md:mx-16mb-4 mt-8 font-bold text-2xl">
-                    What cuisines do you like to experience?
-                </h2>
-                <div className="mx-4 md:mx-16max-w-lg">
-                    <select
-                        {...register('cuisine')}
-                        className="mt-4 block w-full px-3 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
-                    >
-                        <option value="">Choose a cuisine</option>
-                        <option value="Chinese">Chinese</option>
-                        <option value="Mexican">Mexican</option>
-                        <option value="Middle Eastern">Middle Eastern</option>
-                        <option value="Barbeque">Barbeque</option>
-                    </select>
-                    {errors.cuisine && (
-                        <p className="text-red-500 text-sm mt-1">{errors.cuisine.message}</p>
-                    )}
-                </div>
-
-                <div className="mx-4 md:mx-16mb-28 mt-6">
+                {/* ── Bottom CTA ── */}
+                <div className="mt-6 flex justify-end">
                     <button
                         type="submit"
-                        className="text-white bg-amber-500 border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+                        className="w-full sm:w-auto px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-1"
                     >
-                        Next
+                        Find recipes <span aria-hidden>↗</span>
                     </button>
                 </div>
-            </form>
-        </>
+
+            </div>
+        </form>
     )
 }
-
