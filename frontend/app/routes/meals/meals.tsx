@@ -2,6 +2,7 @@ import type {Route} from "./+types/meals"
 import {getAllRecipes} from "~/utils/models/recipe.model";
 import {getRecipeReviews} from "~/utils/models/review.model";
 import type {Recipe} from "~/utils/models/recipe.model";
+import {fetchUserById} from "~/utils/models/user.model";
 import {Link, useSearchParams} from "react-router";
 import {useState} from "react";
 
@@ -22,7 +23,13 @@ export async function loader({request}: Route.LoaderArgs) {
 
     const reviewsMap = await getRecipeReviews(recipes)
     const reviews = Object.fromEntries(reviewsMap)
-    return {recipes, reviews, allRecipes}
+
+    const uniqueUserIds = [...new Set(recipes.map(r => r.userId))]
+    const userResults = await Promise.all(uniqueUserIds.map(id => fetchUserById(id)))
+    const usernameMap: Record<string, string> = {}
+    uniqueUserIds.forEach((id, i) => { if (userResults[i]) usernameMap[id] = userResults[i]!.username })
+
+    return {recipes, reviews, allRecipes, usernameMap}
 }
 
 // ── Pastel card backgrounds ───────────────────────────────────
@@ -42,7 +49,7 @@ function parseMinutes(s: string): number {
 }
 
 export default function Meals({loaderData}: Route.ComponentProps) {
-    const {recipes, reviews, allRecipes} = loaderData
+    const {recipes, reviews, allRecipes, usernameMap} = loaderData
     const [searchParams] = useSearchParams()
     const activeCat = searchParams.get("mealCategory") ?? ""
 
@@ -178,6 +185,9 @@ export default function Meals({loaderData}: Route.ComponentProps) {
                                 {/* Content */}
                                 <div className="px-4 pt-4 pb-5 flex flex-col gap-2 flex-1">
                                     <h3 className="font-semibold text-gray-900 text-sm leading-snug">{recipe.title}</h3>
+                                    {usernameMap[recipe.userId] && (
+                                        <p className="text-xs text-gray-400 -mt-1">by {usernameMap[recipe.userId]}</p>
+                                    )}
                                     <p className="text-xs text-gray-400 leading-snug line-clamp-2">{ingredientNames}</p>
 
                                     {/* Tags */}
