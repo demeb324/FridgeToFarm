@@ -1,6 +1,7 @@
 import {Router} from 'express'
 import {
     getFriendsController,
+    getMutualFriendsController,
     postFriendController,
     postFriendByEmailController,
     putFriendController,
@@ -24,6 +25,13 @@ router.route('/')
     .post(isLoggedInController, postFriendController)
     .put(isLoggedInController, putFriendController)
     .delete(isLoggedInController, deleteFriendController)
+
+/**
+ * GET /apis/friend/mutual/:profileUserId
+ * Get mutual friends between the logged-in user and the given profile
+ */
+router.route('/mutual/:profileUserId')
+    .get(isLoggedInController, getMutualFriendsController)
 
 /**
  * POST /apis/friend/email

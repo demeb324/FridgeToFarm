@@ -5,6 +5,7 @@ import {
     friendSchema,
     insertFriend,
     selectAcceptedFriendsByUserId,
+    selectMutualFriendsByUserIds,
     selectPendingRequestsByUserId,
     updateFriendAccepted,
     deleteFriend,
@@ -126,6 +127,23 @@ export async function deleteFriendController(request: Request, response: Respons
         }
         const message = await deleteFriend(user.id, validationResult.data.requestorId)
         response.json({status: 200, message, data: null})
+    } catch (error: any) {
+        console.error(error)
+        serverErrorResponse(response, error.message)
+    }
+}
+
+export async function getMutualFriendsController(request: Request, response: Response): Promise<void> {
+    try {
+        const user = request.session?.user
+        if (!user) {
+            response.json({status: 401, message: 'Please login to view mutual friends', data: null})
+            return
+        }
+        const profileUserId = request.params.profileUserId
+        const mutualFriends = await selectMutualFriendsByUserIds(user.id, profileUserId)
+        const status: Status = {status: 200, message: 'Mutual friends retrieved successfully', data: {mutualFriends}}
+        response.json(status)
     } catch (error: any) {
         console.error(error)
         serverErrorResponse(response, error.message)

@@ -35,13 +35,18 @@ export async function loader({request, params}: Route.LoaderArgs) {
     const cookie = request.headers.get("Cookie") ?? ""
     const authorization = session.get("authorization") ?? ""
 
-    const [recipesResult, friendsResult] = await Promise.all([
+    const [recipesResult, friendsResult, mutualResult] = await Promise.all([
         getRecipesByUserId(params.userId!),
         currentUser.id === params.userId
             ? Promise.resolve(null)
             : fetch(`${process.env.REST_API_URL}/friend`, {
                 headers: {Cookie: cookie, Authorization: authorization},
-              }).then(r => r.ok ? r.json() : null),
+              }).then(friendsRes => friendsRes.ok ? friendsRes.json() : null),
+        currentUser.id === params.userId
+            ? Promise.resolve(null)
+            : fetch(`${process.env.REST_API_URL}/friend/mutual/${params.userId}`, {
+                headers: {Cookie: cookie, Authorization: authorization},
+              }).then(mutualRes => mutualRes.ok ? mutualRes.json() : null),
     ])
 
     const recipes: Recipe[] = recipesResult ?? []
@@ -60,7 +65,9 @@ export async function loader({request, params}: Route.LoaderArgs) {
         }
     }
 
-    return {friend, currentUser, friendStatus, recipes, reviews}
+    const mutualFriends: PublicUser[] = mutualResult?.data?.mutualFriends ?? []
+
+    return {friend, currentUser, friendStatus, recipes, reviews, mutualFriends}
 }
 
 export async function action({request, params}: Route.ActionArgs) {
@@ -138,7 +145,7 @@ function initials(username: string) {
 }
 
 export default function FriendProfile() {
-    const {friend, currentUser, friendStatus: initialStatus, recipes, reviews} = useLoaderData<typeof loader>()
+    const {friend, currentUser, friendStatus: initialStatus, recipes, reviews, mutualFriends} = useLoaderData<typeof loader>()
     const actionData = useActionData<typeof action>()
     const [activeTab, setActiveTab] = useState<"recipes" | "mutual">("recipes")
     const [avatarError, setAvatarError] = useState(false)
@@ -261,7 +268,7 @@ export default function FriendProfile() {
                 {[
                     {label: "Meals cooked", value: recipes.length},
                     {label: "Recipes saved", value: recipes.length},
-                    {label: "Mutual friends", value: "—"},
+                    {label: "Mutual friends", value: mutualFriends.length},
                     {label: "Member since", value: joinedYear},
                 ].map(stat => (
                     <div key={stat.label} className="border border-gray-200 rounded-xl px-4 py-4 bg-white text-center">
@@ -350,9 +357,24 @@ export default function FriendProfile() {
                     )
                 )}
                 {activeTab === "mutual" && (
-                    <p className="text-sm text-center text-gray-400 py-12">
-                        No mutual friends to show yet.
-                    </p>
+                    mutualFriends.length === 0 ? (
+                        <p className="text-sm text-center text-gray-400 py-12">No mutual friends yet.</p>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            {mutualFriends.map(mutualFriend => (
+                                <Link
+                                    key={mutualFriend.id}
+                                    to={`/friendprofile/${mutualFriend.id}`}
+                                    className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-colors"
+                                >
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm ${avatarColor(mutualFriend.id)}`}>
+                                        {initials(mutualFriend.username)}
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-900 text-center">{mutualFriend.username}</p>
+                                </Link>
+                            ))}
+                        </div>
+                    )
                 )}
             </div>
 

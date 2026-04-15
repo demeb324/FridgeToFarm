@@ -60,6 +60,23 @@ export async function selectAcceptedFriendsByUserId (userId: string): Promise<Pu
     return PublicUserSchema.array().parse(rowList)
 }
 
+export async function selectMutualFriendsByUserIds(userId1: string, userId2: string): Promise<PublicUser[]> {
+    const rowList = await sql`
+        SELECT u.id, u.avatar_url, u.bio, u.created_at, u.username
+        FROM "user" u
+        JOIN friend f1 ON (
+            (f1.requestor_id = ${userId1} AND f1.requestee_id = u.id)
+            OR (f1.requestee_id = ${userId1} AND f1.requestor_id = u.id)
+        )
+        JOIN friend f2 ON (
+            (f2.requestor_id = ${userId2} AND f2.requestee_id = u.id)
+            OR (f2.requestee_id = ${userId2} AND f2.requestor_id = u.id)
+        )
+        WHERE f1.accepted = true AND f2.accepted = true
+        ORDER BY u.username ASC`
+    return PublicUserSchema.array().parse(rowList)
+}
+
 export async function selectPendingRequestsByUserId (userId: string): Promise<PublicUser[]> {
     const rowList = await sql`
         SELECT u.id, u.avatar_url, u.bio, u.created_at, u.username
