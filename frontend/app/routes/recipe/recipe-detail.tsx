@@ -9,6 +9,7 @@ import type {Route} from "./+types/recipe-detail";
 import {Link} from "react-router";
 import {useRef, useState} from "react";
 import {ShareModal} from "~/components/ShareModal";
+import {Stopwatch} from "~/components/Stopwatch";
 
 const resolver = zodResolver(ReviewFormSchema)
 
@@ -72,6 +73,7 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
 
     const [hoverRating, setHoverRating] = useState(0)
     const [showShare, setShowShare] = useState(false)
+    const [cookingSignal, setCookingSignal] = useState(0)
 
     const {register, handleSubmit, watch, setValue, formState: {errors}} = useRemixForm({
         resolver,
@@ -153,7 +155,7 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
                     <div className="flex gap-2 flex-wrap">
                         <button
                             type="button"
-                            onClick={() => methodRef.current?.scrollIntoView({behavior: 'smooth'})}
+                            onClick={() => setCookingSignal(s => s + 1)}
                             className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold transition-colors"
                         >
                             Start cooking
@@ -173,6 +175,7 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
                             Share
                         </button>
                     </div>
+                    <Stopwatch startSignal={cookingSignal} />
                 </div>
             </div>
 

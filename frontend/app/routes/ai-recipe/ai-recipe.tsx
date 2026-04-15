@@ -1,12 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
-import {redirect, data, Form} from "react-router";
+import {data, Form} from "react-router";
 import {v7 as uuid} from "uuid";
 import {postRecipe, type Recipe} from "~/utils/models/recipe.model";
+import {postReview} from "~/utils/models/review.model";
 import {getSession} from "~/utils/session.server";
 import type {Route} from "./+types/ai-recipe";
 import {Link} from "react-router";
-import {useRef, useState} from "react";
+import {useRef, useState, useEffect} from "react";
 import {ShareModal} from "~/components/ShareModal";
+import {Stopwatch} from "~/components/Stopwatch";
 
 function extractJson(text: string): string {
     const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
@@ -78,15 +80,34 @@ export async function action({request}: Route.ActionArgs) {
         return data({error: "Please log in to save a recipe"}, {status: 401})
     }
 
+    const intent = new URL(request.url).searchParams.get('intent')
+    const user = session.get("user")!
+    const authorization = session.get("authorization") ?? ''
+    const cookie = request.headers.get("Cookie") ?? ''
+
     const formData = await request.formData()
+
+    // Handle review submission
+    if (intent === "review") {
+        const recipeId = formData.get("recipeId") as string
+        const body = (formData.get("body") as string ?? '').trim()
+        const rating = parseInt(formData.get("rating") as string ?? '0')
+        if (!body || !recipeId || rating < 1 || rating > 5) {
+            return data({reviewErrors: true})
+        }
+        const result = await postReview(
+            {recipeId, userId: user.id, body, rating, createdAt: null},
+            authorization, cookie
+        )
+        return data({reviewSuccess: result.status === 200, reviewMessage: result.message})
+    }
+
+    // Handle save
     const recipeJson = formData.get('recipeJson') as string
     const cuisine = formData.get('cuisine') as string
     const mealType = formData.get('mealType') as string
 
     const aiRecipe: FullAiRecipe = JSON.parse(recipeJson)
-    const user = session.get("user")!
-    const authorization = session.get("authorization")!
-    const cookie = request.headers.get("Cookie") ?? ''
     const id = uuid()
 
     const dbRecipe: Recipe = {
@@ -118,7 +139,7 @@ export async function action({request}: Route.ActionArgs) {
         return data({error: result.message ?? "Failed to save recipe"})
     }
 
-    return redirect(`/recipe/${id}`)
+    return data({success: true, recipeId: id})
 }
 
 export default function AiRecipe({loaderData, actionData}: Route.ComponentProps) {
@@ -129,7 +150,18 @@ export default function AiRecipe({loaderData, actionData}: Route.ComponentProps)
     const [cookMode, setCookMode] = useState(false)
     const [currentStep, setCurrentStep] = useState(0)
     const [showShare, setShowShare] = useState(false)
+    const [cookingSignal, setCookingSignal] = useState(0)
+    const [savedRecipeId, setSavedRecipeId] = useState<string | null>(null)
+    const [reviewRating, setReviewRating] = useState(0)
+    const [hoverRating, setHoverRating] = useState(0)
     const methodRef = useRef<HTMLDivElement>(null)
+
+    // Persist the saved recipe ID so it survives the review action submission
+    useEffect(() => {
+        if (actionData && 'success' in actionData && actionData.success) {
+            setSavedRecipeId(actionData.recipeId)
+        }
+    }, [actionData])
 
     const instructions = recipe.instructions ?? []
     const ingredients = recipe.ingredients ?? []
@@ -200,7 +232,7 @@ export default function AiRecipe({loaderData, actionData}: Route.ComponentProps)
                     <div className="flex gap-2 flex-wrap">
                         <button
                             type="button"
-                            onClick={() => methodRef.current?.scrollIntoView({behavior: 'smooth'})}
+                            onClick={() => setCookingSignal(s => s + 1)}
                             className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-semibold transition-colors"
                         >
                             Start cooking
@@ -220,6 +252,7 @@ export default function AiRecipe({loaderData, actionData}: Route.ComponentProps)
                             Share
                         </button>
                     </div>
+                    <Stopwatch startSignal={cookingSignal} />
                 </div>
             </div>
 
@@ -349,28 +382,92 @@ export default function AiRecipe({loaderData, actionData}: Route.ComponentProps)
                 </div>
             </div>
 
-            {/* ── Save recipe ── */}
+            {/* ── Save / Review ── */}
             <div className="mt-14 border-t border-gray-100 pt-10">
-                {actionData && 'error' in actionData && (
-                    <p className="text-sm text-red-500 mb-4">{actionData.error}</p>
-                )}
-
                 {user ? (
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-900 mb-1">Save this recipe</h2>
-                        <p className="text-sm text-gray-500 mb-4">Add it to your collection so you can find it later.</p>
-                        <Form method="POST">
-                            <input type="hidden" name="recipeJson" value={JSON.stringify(recipe)} />
-                            <input type="hidden" name="cuisine" value={cuisine} />
-                            <input type="hidden" name="mealType" value={mealType} />
-                            <button
-                                type="submit"
-                                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                    /* ── Review submitted ── */
+                    actionData && 'reviewSuccess' in actionData && actionData.reviewSuccess ? (
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-emerald-600">Review submitted — thanks!</p>
+                            <Link
+                                to={`/recipe/${savedRecipeId}`}
+                                className="text-sm font-medium text-amber-500 hover:text-amber-600 transition-colors"
                             >
-                                Save recipe
-                            </button>
-                        </Form>
-                    </div>
+                                View recipe →
+                            </Link>
+                        </div>
+                    ) : savedRecipeId ? (
+                        /* ── Recipe saved → show review form ── */
+                        <div>
+                            <p className="text-sm font-medium text-emerald-600 mb-5">Recipe saved!</p>
+                            <h3 className="text-base font-semibold text-gray-800 mb-4">Leave a review</h3>
+                            {actionData && 'reviewErrors' in actionData && actionData.reviewErrors && (
+                                <p className="text-sm text-red-500 mb-3">Please select a rating and write a review.</p>
+                            )}
+                            <Form action="?intent=review" method="POST" className="space-y-4 max-w-lg">
+                                <input type="hidden" name="recipeId" value={savedRecipeId ?? ''} />
+                                <input type="hidden" name="rating" value={reviewRating} />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3, 4, 5].map(n => {
+                                            const filled = n <= (hoverRating || reviewRating)
+                                            return (
+                                                <button
+                                                    key={n}
+                                                    type="button"
+                                                    onClick={() => setReviewRating(n)}
+                                                    onMouseEnter={() => setHoverRating(n)}
+                                                    onMouseLeave={() => setHoverRating(0)}
+                                                    aria-label={`${n} star${n !== 1 ? 's' : ''}`}
+                                                    className="text-3xl transition-transform hover:scale-110"
+                                                >
+                                                    <span className={filled ? 'text-amber-400' : 'text-gray-200'}>★</span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label htmlFor="review-body" className="block text-sm font-medium text-gray-700 mb-1.5">Your review</label>
+                                    <textarea
+                                        id="review-body"
+                                        name="body"
+                                        rows={4}
+                                        maxLength={256}
+                                        placeholder="Write your review here…"
+                                        className="block w-full px-3 py-2.5 border border-gray-200 rounded-lg text-gray-900 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 resize-y placeholder:text-gray-400"
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                                >
+                                    Submit review
+                                </button>
+                            </Form>
+                        </div>
+                    ) : (
+                        /* ── Not yet saved ── */
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900 mb-1">Save this recipe</h2>
+                            <p className="text-sm text-gray-500 mb-4">Add it to your collection so you can find it later.</p>
+                            {actionData && 'error' in actionData && (
+                                <p className="text-sm text-red-500 mb-4">{actionData.error}</p>
+                            )}
+                            <Form method="POST">
+                                <input type="hidden" name="recipeJson" value={JSON.stringify(recipe)} />
+                                <input type="hidden" name="cuisine" value={cuisine} />
+                                <input type="hidden" name="mealType" value={mealType} />
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors"
+                                >
+                                    Save recipe
+                                </button>
+                            </Form>
+                        </div>
+                    )
                 ) : (
                     <p className="text-sm text-gray-500">
                         <Link to="/login" className="text-amber-600 hover:text-amber-700 font-medium hover:underline">Log in</Link> to save this recipe to your collection.

@@ -36,7 +36,7 @@ create table if not exists recipe
     prep_time varchar(32),
     protein varchar(16),
     servings smallint,
-    title varchar(32),
+    title varchar(128),
     total_time varchar(16)
 );
 create index on recipe(user_id);

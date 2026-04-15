@@ -140,7 +140,7 @@ function initials(username: string) {
 export default function FriendProfile() {
     const {friend, currentUser, friendStatus: initialStatus, recipes, reviews} = useLoaderData<typeof loader>()
     const actionData = useActionData<typeof action>()
-    const [activeTab, setActiveTab] = useState<"recipes" | "activity" | "mutual">("recipes")
+    const [activeTab, setActiveTab] = useState<"recipes" | "mutual">("recipes")
     const [avatarError, setAvatarError] = useState(false)
 
     // Optimistic status update after action
@@ -159,7 +159,6 @@ export default function FriendProfile() {
 
     const tabs = [
         {key: "recipes", label: "Recipes"},
-        {key: "activity", label: "Activity"},
         {key: "mutual", label: "Mutual friends"},
     ] as const
 
@@ -350,9 +349,9 @@ export default function FriendProfile() {
                         </div>
                     )
                 )}
-                {activeTab !== "recipes" && (
+                {activeTab === "mutual" && (
                     <p className="text-sm text-center text-gray-400 py-12">
-                        No {activeTab === "activity" ? "activity" : "mutual friends"} to show yet.
+                        No mutual friends to show yet.
                     </p>
                 )}
             </div>
