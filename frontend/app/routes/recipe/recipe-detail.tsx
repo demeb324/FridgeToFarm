@@ -292,8 +292,8 @@ export default function RecipeDetail({loaderData, actionData}: Route.ComponentPr
                         /* Normal mode: all steps */
                         <div className="space-y-3">
                             {instructions.map((step, i) => (
-                                <div key={step.stepNumber} className={`border rounded-xl p-4 flex gap-4 ${i === 0 ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-white'}`}>
-                                    <span className={`w-7 h-7 rounded-full text-white text-sm font-bold flex items-center justify-center shrink-0 ${i === 0 ? 'bg-emerald-500' : 'bg-gray-800'}`}>
+                                <div key={step.stepNumber} className="border border-gray-200 bg-white rounded-xl p-4 flex gap-4">
+                                    <span className="w-7 h-7 rounded-full bg-gray-800 text-white text-sm font-bold flex items-center justify-center shrink-0">
                                         {step.stepNumber}
                                     </span>
                                     <p className="text-sm text-gray-700 leading-relaxed">{step.instruction}</p>

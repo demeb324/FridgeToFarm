@@ -1,6 +1,6 @@
 import type { Route } from "./+types/login"
 import {commitSession, getSession} from "~/utils/session.server";
-import {Form, redirect, useActionData, useFetcher} from "react-router";
+import {Form, redirect, useActionData, useFetcher, useSearchParams} from "react-router";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {postSignIn, type SignIn, SignInSchema} from "~/utils/models/sign-in.model";
 import {postSignUp, SignUpUserSchema, type SignUpUser} from "~/utils/models/user.model";
@@ -95,6 +95,9 @@ export async function action({request}: Route.ActionArgs): Promise<FormActionRes
 }
 
 export default function Login() {
+    const [searchParams] = useSearchParams()
+    const redirectTo = searchParams.get('redirectTo') ?? '/'
+
     const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
     const [showPassword, setShowPassword] = useState(false)
     const [showRegisterPassword, setShowRegisterPassword] = useState(false)
@@ -206,7 +209,7 @@ export default function Login() {
 
                     {/* ── Login Form ── */}
                     {activeTab === 'login' && (
-                        <Form onSubmit={loginForm.handleSubmit} action="?intent=login" className="space-y-5" method="POST">
+                        <Form onSubmit={loginForm.handleSubmit} action={`?intent=login&redirectTo=${encodeURIComponent(redirectTo)}`} className="space-y-5" method="POST">
 
                             {/* Email */}
                             <div>
