@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { geocodeAddress } from "@backend/services/geocoding";
 import { asBoolean, asNumber, asString, isLatitude, isLongitude, isRecord } from "@/lib/api/validation";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
@@ -24,11 +25,20 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isLatitude(latitude) || !isLongitude(longitude)) {
-    return NextResponse.json(
-      { error: "latitude and longitude must be valid coordinates." },
-      { status: 400 },
-    );
+  let finalLat = latitude;
+  let finalLng = longitude;
+
+  if (!isLatitude(finalLat) || !isLongitude(finalLng)) {
+    try {
+      const geo = await geocodeAddress(addressText);
+      finalLat = geo.lat;
+      finalLng = geo.lng;
+    } catch (geoError: any) {
+      return NextResponse.json(
+        { error: `Could not geocode address: ${geoError.message}` },
+        { status: 400 },
+      );
+    }
   }
 
   const supabase = createAdminSupabaseClient();
@@ -37,8 +47,8 @@ export async function POST(request: Request) {
     .upsert(
       {
         address_text: addressText,
-        latitude,
-        longitude,
+        latitude: finalLat,
+        longitude: finalLng,
         name,
         opted_out: optedOut,
         phone,
