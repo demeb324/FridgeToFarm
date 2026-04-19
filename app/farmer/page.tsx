@@ -1,4 +1,5 @@
 import { FarmerOpportunityCard } from "@/components/farmer-opportunity-card";
+import { LoadCapacityEstimator } from "@/components/load-capacity-estimator";
 import { Navbar } from "@/components/navbar";
 import { NotificationCard } from "@/components/notification-card";
 import { SidebarNav } from "@/components/sidebar-nav";
@@ -42,6 +43,12 @@ export default function FarmerDashboardPage() {
                 <FarmerOpportunityCard key={opportunity.id} opportunity={opportunity} />
               ))}
             </section>
+
+            <LoadCapacityEstimator
+              role="farmer"
+              title="Estimate how much of your pickup bed this load will use"
+              description="Snap a photo of produce, compost, or materials waiting for pickup and get a quick visual estimate of how much transport space it may occupy."
+            />
 
             <section className="rounded-[2rem] border border-stone-200 bg-stone-950 p-6 text-stone-50 shadow-sm">
               <div className="flex items-center justify-between">

@@ -19,3 +19,15 @@ export function getSupabaseAnonKey() {
 export function getSupabaseServiceRoleKey() {
   return requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 }
+
+export function getBaseUrl() {
+  return process.env.BASE_URL?.trim() || "http://localhost:3000";
+}
+
+export function getOpenAiApiKey() {
+  return requireEnv("OPENAI_API_KEY");
+}
+
+export function getOpenAiVisionModel() {
+  return process.env.OPENAI_VISION_MODEL?.trim() || "gpt-5.4-mini";
+}
