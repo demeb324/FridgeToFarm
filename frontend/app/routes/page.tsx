@@ -1,6 +1,6 @@
 import { GoogleRoutePlanner } from "@/components/google-route-planner";
 import { Navbar } from "@/components/navbar";
-import { routeScenarios } from "@/lib/mock-data";
+import { drivers, routeScenarios } from "@/lib/mock-data";
 
 export default function RoutePlanningPage() {
   return (
@@ -9,7 +9,7 @@ export default function RoutePlanningPage() {
       <main className="mx-auto flex h-[calc(100vh-76px)] max-w-7xl flex-col overflow-hidden px-4 py-4 sm:px-6 lg:px-8">
         <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <div className="min-h-0 flex-1 overflow-hidden">
-            <GoogleRoutePlanner scenarios={routeScenarios} />
+            <GoogleRoutePlanner scenarios={routeScenarios} drivers={drivers} />
           </div>
         </section>
       </main>

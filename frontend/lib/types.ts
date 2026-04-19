@@ -51,3 +51,27 @@ export type RouteScenario = {
     };
   }>;
 };
+
+export type Driver = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string;
+  vehicle: string;
+  phone: string;
+  zone: string;
+};
+
+export type DriverRouteStatus = "Waiting" | "Started" | "In Progress" | "Completed";
+
+export type DriverRouteAssignment = {
+  id: string;
+  driverId: string;
+  routeTitle: string;
+  pickupSource: string;
+  destination: string;
+  pickupWindow: string;
+  material: string;
+  notes: string;
+  status: DriverRouteStatus;
+};

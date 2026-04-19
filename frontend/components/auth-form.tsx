@@ -68,7 +68,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </div>
 
         <p className="mt-6 text-sm text-slate-600">
-          {isSignIn ? "New to FridgeToFarm?" : "Already have an account?"}{" "}
+          {isSignIn ? "New to Agri Vida?" : "Already have an account?"}{" "}
           <Link
             href={isSignIn ? "/auth/sign-up" : "/auth/sign-in"}
             className="font-semibold text-slate-900 underline-offset-4 hover:underline"

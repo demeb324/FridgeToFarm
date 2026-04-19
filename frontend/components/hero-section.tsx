@@ -11,7 +11,7 @@ export function HeroSection() {
           Rural pickup coordination for crops, deliveries, and return-trip compost.
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          FridgeToFarm helps distribution hubs notify nearby farmers when trucks already passing through rural areas can add crop pickups or collect food waste for compost return.
+          Agri Vida helps distribution hubs notify nearby farmers when trucks already passing through rural areas can add crop pickups or collect food waste for compost return.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link

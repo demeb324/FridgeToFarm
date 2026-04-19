@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { APIProvider, Map, Marker, Polyline } from "@vis.gl/react-google-maps";
-import type { RouteScenario } from "@/lib/types";
+import type { Driver, RouteScenario } from "@/lib/types";
 
 declare global {
   interface Window {
@@ -226,15 +227,20 @@ function RouteSync({
 
 export function GoogleRoutePlanner({
   scenarios,
+  drivers,
   compact = false,
 }: {
   scenarios: RouteScenario[];
+  drivers: Driver[];
   compact?: boolean;
 }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [selectedScenarioId, setSelectedScenarioId] = useState(scenarios[0]?.id ?? "");
   const [googleMapsFailed, setGoogleMapsFailed] = useState(false);
+  const [driverMenuOpen, setDriverMenuOpen] = useState(false);
   const selectedScenario = scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
+  const [selectedDriverId, setSelectedDriverId] = useState(drivers[0]?.id ?? "");
+  const selectedDriver = drivers.find((driver) => driver.id === selectedDriverId) ?? drivers[0];
 
   const [origin, setOrigin] = useState(selectedScenario?.origin ?? "");
   const [destination, setDestination] = useState(selectedScenario?.destination ?? "");
@@ -311,8 +317,68 @@ export function GoogleRoutePlanner({
         <aside className="overflow-y-auto border-b border-slate-200 bg-slate-50 p-6 xl:border-b-0 xl:border-r">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Google Maps route planner</p>
 
+          <div className="mt-5">
+            <p className="text-sm font-medium text-slate-700">Driver</p>
+            <div className="relative mt-2">
+              <button
+                type="button"
+                onClick={() => setDriverMenuOpen((current) => !current)}
+                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={selectedDriver.avatarUrl}
+                    alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
+                    width={44}
+                    height={44}
+                    className="h-11 w-11 rounded-full object-cover"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {selectedDriver.firstName} {selectedDriver.lastName}
+                    </p>
+                    <p className="text-xs text-slate-500">{selectedDriver.vehicle}</p>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-slate-500">Select</span>
+              </button>
+
+              {driverMenuOpen ? (
+                <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_40px_-30px_rgba(15,23,42,0.35)]">
+                  {drivers.map((driver) => (
+                    <button
+                      type="button"
+                      key={driver.id}
+                      onClick={() => {
+                        setSelectedDriverId(driver.id);
+                        setDriverMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-slate-50"
+                    >
+                      <Image
+                        src={driver.avatarUrl}
+                        alt={`${driver.firstName} ${driver.lastName}`}
+                        width={44}
+                        height={44}
+                        className="h-11 w-11 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {driver.firstName} {driver.lastName}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {driver.zone} · {driver.vehicle}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
           <label className="mt-5 block text-sm font-medium text-slate-700">
-            Demo route
+            Route
             <select
               value={selectedScenarioId}
               onChange={(event) => {
@@ -414,6 +480,57 @@ export function GoogleRoutePlanner({
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="mt-5 rounded-[1.5rem] border border-emerald-100 bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">Driver route details</p>
+            <div className="mt-4 flex items-center gap-3">
+              <Image
+                src={selectedDriver.avatarUrl}
+                alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
+                width={48}
+                height={48}
+                className="h-12 w-12 rounded-full object-cover"
+              />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {selectedDriver.firstName} {selectedDriver.lastName}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {selectedDriver.vehicle} · {selectedDriver.zone}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3 text-sm text-slate-600">
+              <div>
+                <p className="font-semibold text-slate-900">Pickup route</p>
+                <p className="mt-1">{origin}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Stops</p>
+                <p className="mt-1">
+                  {pickups.filter((pickup) => pickup.trim().length > 0).length > 0
+                    ? pickups.filter((pickup) => pickup.trim().length > 0).join(" -> ")
+                    : "No pickup stops assigned yet"}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Drop-off destination</p>
+                <p className="mt-1">{destination}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Driver contact</p>
+                <p className="mt-1">{selectedDriver.phone}</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="mt-4 w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              Send route details to driver
+            </button>
           </div>
 
         </aside>

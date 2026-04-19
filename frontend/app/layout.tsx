@@ -13,7 +13,7 @@ const displayFont = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "FridgeToFarm",
+  title: "Agri Vida",
   description: "Frontend MVP for coordinating rural pickup routes between farmers and distribution hubs.",
 };
 
