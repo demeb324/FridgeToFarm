@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:perla.ddfullstack.cloud)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")"
-    ]
-  }
-}
