@@ -41,10 +41,10 @@ This MVP is intentionally minimal: no authentication, no crop listings, no deliv
 ### Architecture
 
 - **Framework**: Next.js using App Router (React Server Components, route handlers in `app/api/`)
-- **Database**: PostgreSQL (production on Vercel Postgres) / SQLite (local development), accessed via Kysely type-safe query builder
+- **Database**: Supabase (PostgreSQL) for both development and production. Supabase provides hosted Postgres, auth, and a JS client library.
 - **Deployment**: Vercel with serverless functions for API routes
 - **No authentication**: Hub accounts are pre-seeded with no login. Farmer registration is anonymous. This is a prototype constraint, not a security model.
-- **Project structure**: Greenfield Next.js App Router project — `app/` for routes and pages, `lib/` for business logic, `db/` for database schema and migrations.
+- **Project structure**: Greenfield Next.js App Router project — `app/` for routes and pages, `lib/` for business logic, `db/` for Supabase client and types.
 
 ### Proximity Matching
 
@@ -55,7 +55,7 @@ This MVP is intentionally minimal: no authentication, no crop listings, no deliv
 
 ### Map & Geocoding
 
-- **Map widget**: Google Maps React (`@react-google-maps/api`) for the hub route planner. Hub operators click or search to set start/end points.
+- **Map widget**: `@vis.gl/react-google-maps` (v1.8.3) for the hub route planner. Hub operators click or search to set start/end points.
 - **Route generation**: Google Maps Routes API generates the route path (polyline) between start and end points for visual display on the map.
 - **Geocoding**: Google Maps Geocoding API converts farmer addresses/zip codes to lat/lng coordinates during registration. Browser Geolocation API is offered as an optional auto-fill.
 
@@ -141,4 +141,4 @@ The following features are anticipated for post-MVP iterations and should not be
 - **Twilio costs**: Each SMS costs money. Monitor usage during testing to avoid unexpected bills during prototype validation.
 - **Google Maps API costs**: Route generation and geocoding both incur per-request charges. Consider caching geocoding results for repeated addresses.
 - **Vercel serverless timeout**: SMS notification batches for large farmer populations could exceed Vercel's 10-second function timeout. If this occurs, batch processing with a queue (e.g., Vercel Cron or Inngest) may be needed.
-- **SQLite → PostgreSQL migration**: The Kysely dialect difference between SQLite (dev) and PostgreSQL (prod) requires careful handling of geo queries and type differences. Migration scripts must be tested.
+- **SQLite → PostgreSQL migration**: Using Supabase (hosted PostgreSQL) for both dev and prod eliminates the SQLite/Postgres dialect mismatch entirely. Supabase CLI provides local development with the same Postgres instance.

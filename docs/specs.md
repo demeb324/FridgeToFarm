@@ -129,11 +129,12 @@ The prototype validates the core discovery loop if:
 | Component | Technology |
 |---|---|
 | Frontend & Backend | Next.js |
-| Database | PostgreSQL (production) / SQLite (development) |
+| Database | Supabase (PostgreSQL) |
 | Mapping & Routing | Google Maps Routes API |
+| Maps Library | @vis.gl/react-google-maps |
 | SMS Notifications | Twilio |
 | Geocoding | Google Maps Geocoding API |
-| Hosting | TBD |
+| Hosting | Vercel |
 
 ---
 
