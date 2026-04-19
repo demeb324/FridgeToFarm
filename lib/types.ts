@@ -84,3 +84,19 @@ export type DriverRouteAssignment = {
   notes: string;
   status: DriverRouteStatus;
 };
+
+export type CapacityEstimateRole = "distributor" | "farmer";
+
+export type CapacityEstimateResult = {
+  summary: string;
+  estimatedFillPercentage: number;
+  estimatedFloorCoveragePercentage: number;
+  estimatedHeightUsagePercentage: number;
+  estimatedUsedVolume: number;
+  estimatedRemainingVolume: number;
+  fitStatus: "fits_comfortably" | "fits_tightly" | "likely_over_capacity" | "unclear";
+  confidence: "low" | "medium" | "high";
+  visibleCues: string[];
+  assumptions: string[];
+  safetyNotes: string[];
+};

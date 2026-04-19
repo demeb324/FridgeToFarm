@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DashboardStatCard } from "@/components/dashboard-stat-card";
+import { LoadCapacityEstimator } from "@/components/load-capacity-estimator";
 import { RouteForm } from "@/components/route-form";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { StatusBadge } from "@/components/status-badge";
@@ -42,6 +43,11 @@ export function HubDashboardShell() {
 
         <div className="grid gap-6">
           <RouteForm />
+          <LoadCapacityEstimator
+            role="distributor"
+            title="Estimate truck or trailer space before dispatch"
+            description="Upload a load photo and compare it against the bed dimensions so your team can quickly judge how much space a route still has left."
+          />
         </div>
 
         <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
