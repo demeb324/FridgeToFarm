@@ -257,12 +257,8 @@ export function GoogleRoutePlanner({
   const [googleMapsFailed, setGoogleMapsFailed] = useState(false);
   const [driverMenuOpen, setDriverMenuOpen] = useState(false);
   const [routeSent, setRouteSent] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [publishResult, setPublishResult] = useState<{
-    farmers_notified: number;
-    notifications: Array<{ farmer_id: string; farmer_name: string; status: string }>;
-  } | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const selectedScenario = scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
   const [selectedDriverId, setSelectedDriverId] = useState(drivers[0]?.id ?? "");
   const selectedDriver = drivers.find((driver) => driver.id === selectedDriverId) ?? drivers[0];
@@ -334,44 +330,7 @@ export function GoogleRoutePlanner({
     setMarkers(toMarkerPoints(scenario.origin, scenario.destination, scenario.pickups, scenario));
     setGoogleMapsFailed(false);
     setRouteSent(false);
-    setSubmitError(null);
-    setPublishResult(null);
-  };
-
-  const handlePublish = async () => {
-    setIsSubmitting(true);
-    setSubmitError(null);
-    setPublishResult(null);
-
-    try {
-      const response = await fetch("/api/routes/publish-new", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: selectedScenario?.title || `${origin} → ${destination}`,
-          origin,
-          destination,
-          pickups: pickups.filter((p) => p.trim().length > 0),
-          notes: selectedScenario?.notes || "",
-        }),
-      });
-
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(payload?.error || `Request failed (${response.status}).`);
-      }
-
-      setPublishResult({
-        farmers_notified: payload.farmers_notified ?? 0,
-        notifications: payload.notifications ?? [],
-      });
-      setRouteSent(true);
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Failed to publish route.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setSendError(null);
   };
 
   const updateDraftPickup = (pickupId: string, value: string) => {
@@ -394,6 +353,65 @@ export function GoogleRoutePlanner({
 
   const addPickup = () => {
     setDraftPickups((current) => [...current, createPickupDraft("")]);
+  };
+
+  const DEMO_HUB_ID = "1e53e9e8-11db-4012-9451-f996632cd250";
+
+  const sendRouteToDriver = async () => {
+    setSendError(null);
+    const originMarker = routeMarkers.find((m) => m.kind === "origin");
+    const destMarker = routeMarkers.find((m) => m.kind === "destination");
+    if (!originMarker || !destMarker) {
+      setSendError("Route must have an origin and destination.");
+      return;
+    }
+
+    const start = new Date();
+    const end = new Date(start.getTime() + 4 * 60 * 60 * 1000);
+    const polyline = routeMarkers
+      .map((m) => `${m.position.lat.toFixed(5)},${m.position.lng.toFixed(5)}`)
+      .join("|");
+    const pickupList = pickups.filter((p) => p.trim().length > 0);
+    const driverLabel = selectedDriver
+      ? `${selectedDriver.firstName} ${selectedDriver.lastName} (${selectedDriver.phone})`
+      : "unassigned";
+    const notes = [
+      `Driver: ${driverLabel}`,
+      pickupList.length ? `Pickups: ${pickupList.join(" -> ")}` : null,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    const payload = {
+      hub_id: DEMO_HUB_ID,
+      title: selectedScenario?.title || `Route to ${destination}`,
+      route_polyline: polyline || "planner-route",
+      start_lat: originMarker.position.lat,
+      start_lng: originMarker.position.lng,
+      end_lat: destMarker.position.lat,
+      end_lng: destMarker.position.lng,
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
+      notes,
+    };
+
+    setSending(true);
+    try {
+      const res = await fetch("/api/routes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `Request failed (${res.status})`);
+      }
+      setRouteSent(true);
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSending(false);
+    }
   };
 
   const removePickup = (pickupId: string) => {
@@ -624,37 +642,21 @@ export function GoogleRoutePlanner({
 
               <button
               type="button"
-              className="mt-4 w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={handlePublish}
-              disabled={isSubmitting}
+              disabled={sending}
+              className="mt-4 w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+              onClick={sendRouteToDriver}
             >
-              {isSubmitting ? "Publishing route..." : "Send route details to driver"}
+              {sending ? "Sending…" : "Send route details to driver"}
             </button>
 
-            {submitError ? (
-              <div className="mt-4 rounded-[1.25rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800">
-                {submitError}
+            {routeSent ? (
+              <div className="mt-4 rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                Route details sent to {selectedDriver.firstName} {selectedDriver.lastName}.
               </div>
             ) : null}
-
-            {routeSent && publishResult ? (
-              <div className="mt-4 rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                <p className="font-semibold">
-                  Route published. Notified {publishResult.farmers_notified} farmer
-                  {publishResult.farmers_notified === 1 ? "" : "s"} within 10 miles.
-                </p>
-                {publishResult.notifications.length > 0 ? (
-                  <ul className="mt-2 space-y-1 text-xs font-normal text-emerald-800">
-                    {publishResult.notifications.map((n) => (
-                      <li key={n.farmer_id}>
-                        {n.farmer_name} — {n.status}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                <p className="mt-2 text-xs font-normal text-emerald-800">
-                  Route details sent to {selectedDriver.firstName} {selectedDriver.lastName}.
-                </p>
+            {sendError ? (
+              <div className="mt-4 rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+                Failed to send: {sendError}
               </div>
             ) : null}
           </div>

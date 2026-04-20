@@ -55,3 +55,33 @@ export function formatRouteSmsMessage(params: {
   const { hubName, routeDate, responseUrl, hubPhone, hubEmail } = params
   return `${hubName} has a delivery route near you on ${routeDate}. Tap to respond: ${responseUrl} Questions? Contact ${hubPhone} or ${hubEmail}.`
 }
+
+/**
+ * Format the SMS summary sent to the admin when a route is created.
+ */
+export function formatRouteCreatedAdminSms(params: {
+  title: string
+  startTime: string
+  endTime: string
+  hubName: string
+  hubPhone: string
+  hubEmail: string
+  notes?: string | null
+}): string {
+  const { title, startTime, endTime, hubName, hubPhone, hubEmail, notes } = params
+  const start = new Date(startTime).toLocaleString("en-US", {
+    dateStyle: "short",
+    timeStyle: "short",
+  })
+  const end = new Date(endTime).toLocaleString("en-US", {
+    dateStyle: "short",
+    timeStyle: "short",
+  })
+  const lines = [
+    `Route saved: ${title}`,
+    `${start} → ${end}`,
+    `Hub: ${hubName} (${hubPhone}, ${hubEmail})`,
+  ]
+  if (notes) lines.push(`Notes: ${notes}`)
+  return lines.join("\n")
+}

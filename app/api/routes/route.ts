@@ -9,6 +9,9 @@ import {
   isRecord,
 } from "@/lib/api/validation";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import { formatRouteCreatedAdminSms, sendSms } from "@backend/services/sms";
+
+const ADMIN_SMS_RECIPIENT = "+15052267853";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -95,6 +98,22 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  try {
+    const hub = (data as { hubs?: { name?: string; phone?: string; email?: string } | null }).hubs;
+    const message = formatRouteCreatedAdminSms({
+      title: data.title,
+      startTime: data.start_time,
+      endTime: data.end_time,
+      hubName: hub?.name ?? "Unknown hub",
+      hubPhone: hub?.phone ?? "n/a",
+      hubEmail: hub?.email ?? "n/a",
+      notes: data.notes,
+    });
+    await sendSms(ADMIN_SMS_RECIPIENT, message);
+  } catch (smsError) {
+    console.error("[routes.POST] admin SMS failed:", smsError);
   }
 
   return NextResponse.json(data, { status: 201 });
