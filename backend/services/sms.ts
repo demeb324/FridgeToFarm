@@ -11,12 +11,6 @@ export interface SmsResult {
  * Returns the Twilio message SID and status.
  */
 export async function sendSms(to: string, message: string): Promise<SmsResult> {
-  if (process.env.SMS_DRY_RUN === "1") {
-    const sid = `SM_dryrun_${Math.random().toString(36).slice(2, 10)}`;
-    console.log(`[sms] DRY_RUN to=${to} sid=${sid}`);
-    return { sid, status: "sent" };
-  }
-
   const accountSid = process.env.TWILIO_ACCOUNT_SID
   const authToken = process.env.TWILIO_AUTH_TOKEN
   const fromNumber = process.env.TWILIO_PHONE_NUMBER

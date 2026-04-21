@@ -79,6 +79,6 @@ describe("publish flow: POST /api/routes → PATCH /api/routes/[id]/publish", ()
       .select("id, status, twilio_sid").eq("route_id", routeId).eq("farmer_id", farmerId);
     expect(log!.length).toBeGreaterThanOrEqual(1);
     expect(log![0].status).toBe("sent");
-    expect(log![0].twilio_sid).toMatch(/^SM_dryrun_/);
+    expect(log![0].twilio_sid).toMatch(/^SM_mock_/);
   }, 30_000);
 });
