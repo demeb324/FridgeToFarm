@@ -6,9 +6,6 @@ import type { Database } from "@/lib/supabase/database.types";
 
 config({ path: ".env.local" });
 
-// This test is the one integration test permitted to send a real Twilio SMS.
-process.env.SMS_DRY_RUN = "0";
-
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -206,6 +203,19 @@ describe("PATCH /api/routes/:id/publish — integration", () => {
   });
 
   it("proximity filter: notifies nearby farmer, skips distant farmer", async () => {
+    // Clean up any stray test farmers near Albuquerque from other test files
+    // (e.g. stats.test.ts seeds a farmer at 35.085,-106.651 with +15052267999).
+    const KNOWN_CONTAMINANT_PHONES = ["+15052267999", "+15052267952"];
+    for (const phone of KNOWN_CONTAMINANT_PHONES) {
+      const { data: priorFarmers } = await supabase.from("farmers").select("id").eq("phone", phone);
+      const priorIds = (priorFarmers ?? []).map((f) => f.id);
+      if (priorIds.length) {
+        await supabase.from("notification_log").delete().in("farmer_id", priorIds);
+        await supabase.from("route_responses").delete().in("farmer_id", priorIds);
+        await supabase.from("farmers").delete().in("id", priorIds);
+      }
+    }
+
     // Near farmer uses the verified phone (will actually receive SMS)
     const nearFarmer = await insertTestFarmer(
       "near",
