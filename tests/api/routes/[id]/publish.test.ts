@@ -203,17 +203,19 @@ describe("PATCH /api/routes/:id/publish — integration", () => {
   });
 
   it("proximity filter: notifies nearby farmer, skips distant farmer", async () => {
-    // Clean up any stray test farmers near Albuquerque from other test files
-    // (e.g. stats.test.ts seeds a farmer at 35.085,-106.651 with +15052267999).
-    const KNOWN_CONTAMINANT_PHONES = ["+15052267999", "+15052267952"];
-    for (const phone of KNOWN_CONTAMINANT_PHONES) {
-      const { data: priorFarmers } = await supabase.from("farmers").select("id").eq("phone", phone);
-      const priorIds = (priorFarmers ?? []).map((f) => f.id);
-      if (priorIds.length) {
-        await supabase.from("notification_log").delete().in("farmer_id", priorIds);
-        await supabase.from("route_responses").delete().in("farmer_id", priorIds);
-        await supabase.from("farmers").delete().in("id", priorIds);
-      }
+    // Clean up any stray test farmers near Albuquerque left behind by crashed
+    // prior runs of other test files (stats/opportunities/notifications/publish-flow).
+    const { data: stale } = await supabase
+      .from("farmers")
+      .select("id")
+      .gte("latitude", 35.08).lte("latitude", 35.10)
+      .gte("longitude", -106.66).lte("longitude", -106.64)
+      .like("name", "%itest-%");
+    const staleIds = (stale ?? []).map((f) => f.id);
+    if (staleIds.length) {
+      await supabase.from("notification_log").delete().in("farmer_id", staleIds);
+      await supabase.from("route_responses").delete().in("farmer_id", staleIds);
+      await supabase.from("farmers").delete().in("id", staleIds);
     }
 
     // Near farmer uses the verified phone (will actually receive SMS)
