@@ -2,15 +2,28 @@ import { DashboardStatCard } from "@/components/dashboard-stat-card";
 import { HeroSection } from "@/components/hero-section";
 import { MapPlaceholder } from "@/components/map-placeholder";
 import { Navbar } from "@/components/navbar";
-import { NotificationCard } from "@/components/notification-card";
-import { RouteCard } from "@/components/route-card";
-import {
-  farmerNotifications,
-  heroStats,
-  hubOperationalStats,
-  pickupOpportunities,
-  routePlans,
-} from "@/lib/mock-data";
+import { heroStats } from "@/lib/config/landing";
+import type { RoutePlan } from "@/lib/types";
+
+const sampleRoute: RoutePlan = {
+  id: "sample",
+  title: "Boise North produce run",
+  startLocation: "Boise Distribution Hub",
+  endLocation: "Treasure Valley Co-op",
+  startTime: "Wed 7:00 AM",
+  endTime: "Wed 11:30 AM",
+  notes: "Compost pickup enabled on the return leg.",
+  status: "Open",
+  nearbyFarmers: 12,
+  pickupRequests: 4,
+  stops: [],
+};
+
+const hubHighlights = [
+  { label: "Nearby growers", value: "—", detail: "Eligible contacts along active route corridors." },
+  { label: "Pickup requests", value: "—", detail: "Open farmer responses waiting for dispatch review." },
+  { label: "Active trips", value: "—", detail: "Live or upcoming deliveries visible to the operations team." },
+];
 
 export default function Home() {
   return (
@@ -40,26 +53,11 @@ export default function Home() {
             </h2>
             <div className="grid gap-4 md:grid-cols-3">
               {[
-                {
-                  step: "1",
-                  title: "Hubs publish routes",
-                  body: "Distribution teams log planned trips, destinations, timing, and return capacity.",
-                },
-                {
-                  step: "2",
-                  title: "Farmers get alerts",
-                  body: "Nearby growers receive simple SMS-style pickup notices with one clear response path.",
-                },
-                {
-                  step: "3",
-                  title: "Loads get coordinated",
-                  body: "Trips leave fuller, market access improves, and return runs can collect compost inputs.",
-                },
+                { step: "1", title: "Hubs publish routes", body: "Distribution teams log planned trips, destinations, timing, and return capacity." },
+                { step: "2", title: "Farmers get alerts", body: "Nearby growers receive simple SMS-style pickup notices with one clear response path." },
+                { step: "3", title: "Loads get coordinated", body: "Trips leave fuller, market access improves, and return runs can collect compost inputs." },
               ].map((item) => (
-                <div
-                  key={item.step}
-                  className="rounded-[1.5rem] border border-slate-200 bg-slate-50/90 p-5"
-                >
+                <div key={item.step} className="rounded-[1.5rem] border border-slate-200 bg-slate-50/90 p-5">
                   <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
                     {item.step}
                   </div>
@@ -73,7 +71,7 @@ export default function Home() {
           <MapPlaceholder
             title="Route planning preview"
             subtitle="GIS-ready layout for future mapping integration"
-            route={routePlans[0]}
+            route={sampleRoute}
             compact={false}
           />
         </section>
@@ -86,16 +84,9 @@ export default function Home() {
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
               Low-friction updates that feel familiar, not technical.
             </h2>
-            <div className="mt-6 space-y-4">
-              {pickupOpportunities.slice(0, 2).map((opportunity) => (
-                <RouteCard key={opportunity.id} route={opportunity} actionLabel="Respond / Coordinate" />
-              ))}
-            </div>
-            <div className="mt-6 grid gap-3">
-              {farmerNotifications.slice(0, 2).map((notification) => (
-                <NotificationCard key={notification.id} notification={notification} />
-              ))}
-            </div>
+            <p className="mt-4 text-sm leading-7 text-slate-700">
+              Growers receive SMS-style pickup notices with one clear response path. No logins, no apps — just a link that opens to a simple response page tailored to their farm.
+            </p>
           </div>
 
           <div className="rounded-[2rem] border border-emerald-100 bg-emerald-950 p-8 text-emerald-50 shadow-[0_20px_60px_-45px_rgba(6,78,59,0.9)]">
@@ -106,24 +97,9 @@ export default function Home() {
               One screen for route setup, nearby outreach, and pickup demand.
             </h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              {hubOperationalStats.map((stat) => (
+              {hubHighlights.map((stat) => (
                 <DashboardStatCard key={stat.label} {...stat} inverted />
               ))}
-            </div>
-            <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/6 p-5">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {routePlans.slice(0, 2).map((route) => (
-                  <div key={route.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
-                    <p className="text-sm font-semibold text-white">{route.title}</p>
-                    <p className="mt-1 text-sm text-emerald-100/80">
-                      {route.startLocation} to {route.endLocation}
-                    </p>
-                    <p className="mt-3 text-xs uppercase tracking-[0.18em] text-emerald-200/70">
-                      {route.nearbyFarmers} nearby farmers notified
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </section>
