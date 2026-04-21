@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { APIProvider, Map, Marker, Polyline } from "@vis.gl/react-google-maps";
 import type { Driver, RouteScenario } from "@/lib/types";
+import { api } from "@/lib/api/client";
 
 declare global {
   interface Window {
@@ -245,20 +247,48 @@ function RouteSync({
 
 export function GoogleRoutePlanner({
   scenarios,
-  drivers,
+  hubId,
   compact = false,
 }: {
   scenarios: RouteScenario[];
-  drivers: Driver[];
+  hubId: string;
   compact?: boolean;
 }) {
+  const driversQ = useQuery({
+    queryKey: ["drivers", hubId],
+    queryFn: () => api.listDrivers(hubId),
+  });
+  const drivers: Driver[] = (driversQ.data ?? []).map((d) => ({
+    id: d.id,
+    firstName: d.firstName,
+    lastName: d.lastName,
+    avatarUrl: d.avatarUrl ?? "",
+    vehicle: d.vehicle ?? "",
+    phone: d.phone,
+    zone: d.zone ?? "",
+  }));
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [selectedScenarioId, setSelectedScenarioId] = useState(scenarios[0]?.id ?? "");
   const [googleMapsFailed, setGoogleMapsFailed] = useState(false);
   const [driverMenuOpen, setDriverMenuOpen] = useState(false);
   const [routeSent, setRouteSent] = useState(false);
-  const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [notifyResult, setNotifyResult] = useState<{ notified: number; failed: number } | null>(null);
+
+  const publishMutation = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const created = await api.createRoute(payload);
+      const pub = await api.publishRoute(created.id);
+      return { created, pub };
+    },
+    onSuccess: ({ pub }) => {
+      const notified = pub.farmers_notified ?? 0;
+      const failed = (pub.notifications ?? []).filter((n) => n.status === "failed").length;
+      setNotifyResult({ notified, failed });
+      setRouteSent(true);
+    },
+    onError: (err) => setSendError(err instanceof Error ? err.message : String(err)),
+  });
   const selectedScenario = scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? scenarios[0];
   const [selectedDriverId, setSelectedDriverId] = useState(drivers[0]?.id ?? "");
   const selectedDriver = drivers.find((driver) => driver.id === selectedDriverId) ?? drivers[0];
@@ -355,14 +385,17 @@ export function GoogleRoutePlanner({
     setDraftPickups((current) => [...current, createPickupDraft("")]);
   };
 
-  const DEMO_HUB_ID = "1e53e9e8-11db-4012-9451-f996632cd250";
-
-  const sendRouteToDriver = async () => {
+  const sendRouteToDriver = () => {
     setSendError(null);
+    setNotifyResult(null);
     const originMarker = routeMarkers.find((m) => m.kind === "origin");
     const destMarker = routeMarkers.find((m) => m.kind === "destination");
     if (!originMarker || !destMarker) {
       setSendError("Route must have an origin and destination.");
+      return;
+    }
+    if (!selectedDriver) {
+      setSendError("Pick a driver before sending the route.");
       return;
     }
 
@@ -372,18 +405,11 @@ export function GoogleRoutePlanner({
       .map((m) => `${m.position.lat.toFixed(5)},${m.position.lng.toFixed(5)}`)
       .join("|");
     const pickupList = pickups.filter((p) => p.trim().length > 0);
-    const driverLabel = selectedDriver
-      ? `${selectedDriver.firstName} ${selectedDriver.lastName} (${selectedDriver.phone})`
-      : "unassigned";
-    const notes = [
-      `Driver: ${driverLabel}`,
-      pickupList.length ? `Pickups: ${pickupList.join(" -> ")}` : null,
-    ]
-      .filter(Boolean)
-      .join(" | ");
+    const notes = pickupList.length ? `Pickups: ${pickupList.join(" -> ")}` : null;
 
-    const payload = {
-      hub_id: DEMO_HUB_ID,
+    publishMutation.mutate({
+      hub_id: hubId,
+      driver_id: selectedDriver.id,
       title: selectedScenario?.title || `Route to ${destination}`,
       route_polyline: polyline || "planner-route",
       start_lat: originMarker.position.lat,
@@ -393,25 +419,7 @@ export function GoogleRoutePlanner({
       start_time: start.toISOString(),
       end_time: end.toISOString(),
       notes,
-    };
-
-    setSending(true);
-    try {
-      const res = await fetch("/api/routes", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || `Request failed (${res.status})`);
-      }
-      setRouteSent(true);
-    } catch (err) {
-      setSendError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSending(false);
-    }
+    });
   };
 
   const removePickup = (pickupId: string) => {
@@ -424,6 +432,10 @@ export function GoogleRoutePlanner({
     setDraftPickups(nextDraftPickups);
     setMarkers(toMarkerPoints(origin, destination, nextPickups, selectedScenario));
   };
+
+  if (driversQ.isLoading) {
+    return <p className="p-6 text-sm text-slate-600">Loading planner…</p>;
+  }
 
   return (
     <section className="h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
@@ -440,19 +452,25 @@ export function GoogleRoutePlanner({
                 className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <Image
-                    src={selectedDriver.avatarUrl}
-                    alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
-                    width={44}
-                    height={44}
-                    className="h-11 w-11 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {selectedDriver.firstName} {selectedDriver.lastName}
-                    </p>
-                    <p className="text-xs text-slate-500">{selectedDriver.vehicle}</p>
-                  </div>
+                  {selectedDriver ? (
+                    <>
+                      <Image
+                        src={selectedDriver.avatarUrl}
+                        alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
+                        width={44}
+                        height={44}
+                        className="h-11 w-11 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {selectedDriver.firstName} {selectedDriver.lastName}
+                        </p>
+                        <p className="text-xs text-slate-500">{selectedDriver.vehicle}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-500">No driver selected</p>
+                  )}
                 </div>
                 <span className="text-sm font-semibold text-slate-500">Select</span>
               </button>
@@ -599,23 +617,25 @@ export function GoogleRoutePlanner({
 
           <div className="mt-5 rounded-[1.5rem] border border-emerald-100 bg-white p-4 shadow-sm">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">Driver route details</p>
-            <div className="mt-4 flex items-center gap-3">
-              <Image
-                src={selectedDriver.avatarUrl}
-                alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
-                width={48}
-                height={48}
-                className="h-12 w-12 rounded-full object-cover"
-              />
-              <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {selectedDriver.firstName} {selectedDriver.lastName}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {selectedDriver.vehicle} · {selectedDriver.zone}
-                </p>
+            {selectedDriver ? (
+              <div className="mt-4 flex items-center gap-3">
+                <Image
+                  src={selectedDriver.avatarUrl}
+                  alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {selectedDriver.firstName} {selectedDriver.lastName}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {selectedDriver.vehicle} · {selectedDriver.zone}
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : null}
 
             <div className="mt-4 space-y-3 text-sm text-slate-600">
               <div>
@@ -634,25 +654,35 @@ export function GoogleRoutePlanner({
                 <p className="font-semibold text-slate-900">Drop-off destination</p>
                 <p className="mt-1">{destination}</p>
               </div>
-              <div>
-                <p className="font-semibold text-slate-900">Driver contact</p>
-                <p className="mt-1">{selectedDriver.phone}</p>
-              </div>
+              {selectedDriver ? (
+                <div>
+                  <p className="font-semibold text-slate-900">Driver contact</p>
+                  <p className="mt-1">{selectedDriver.phone}</p>
+                </div>
+              ) : null}
             </div>
 
-              <button
+            <button
               type="button"
-              disabled={sending}
+              disabled={publishMutation.isPending || drivers.length === 0 || !selectedDriver}
               className="mt-4 w-full rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
               onClick={sendRouteToDriver}
             >
-              {sending ? "Sending…" : "Send route details to driver"}
+              {publishMutation.isPending ? "Sending…" : "Send route details to driver"}
             </button>
+            {drivers.length === 0 && !driversQ.isLoading ? (
+              <p className="mt-2 text-xs text-slate-600">No drivers available for this hub.</p>
+            ) : null}
 
             {routeSent ? (
               <div className="mt-4 rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-                Route details sent to {selectedDriver.firstName} {selectedDriver.lastName}.
+                Route details sent{selectedDriver ? ` to ${selectedDriver.firstName} ${selectedDriver.lastName}` : ""}.
               </div>
+            ) : null}
+            {notifyResult ? (
+              <p className="mt-2 text-sm text-emerald-800">
+                {notifyResult.notified} farmers notified, {notifyResult.failed} failed.
+              </p>
             ) : null}
             {sendError ? (
               <div className="mt-4 rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
