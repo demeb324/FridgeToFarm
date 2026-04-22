@@ -5,7 +5,9 @@ async function http<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error((body as { error?: string })?.error || `Request failed (${res.status})`);
+    const err = new Error((body as { error?: string; message?: string })?.error || (body as { message?: string })?.message || `Request failed (${res.status})`);
+    (err as Error & { field?: string }).field = (body as { field?: string }).field;
+    throw err;
   }
   return res.json() as Promise<T>;
 }
@@ -21,10 +23,21 @@ export type FarmerOpportunity = {
   routeDate: string; pickupWindow: string; destination: string; distanceMiles: number;
 };
 
+export type RouteStop = {
+  id: string;
+  order_index: number;
+  address: string;
+  name: string | null;
+  latitude: number;
+  longitude: number;
+};
+
 export type RouteRow = {
   id: string;
   hub_id: string;
   title: string;
+  start_address: string;
+  end_address: string;
   start_lat: number;
   start_lng: number;
   end_lat: number;
@@ -36,20 +49,33 @@ export type RouteRow = {
   published: boolean;
   created_at: string;
   hubs?: { id: string; name: string; phone: string; email: string } | null;
+  stops: RouteStop[];
 };
+
+export type RouteStop_Input = { address: string; name?: string | null };
 
 export type RouteUpdatePayload = Partial<{
   title: string;
   driver_id: string;
-  start_lat: number;
-  start_lng: number;
-  end_lat: number;
-  end_lng: number;
-  route_polyline: string;
+  start_address: string;
+  end_address: string;
+  stops: RouteStop_Input[];
   start_time: string;
   end_time: string;
   notes: string | null;
 }>;
+
+export type RouteCreatePayload = {
+  hub_id: string;
+  driver_id: string;
+  title: string;
+  start_address: string;
+  end_address: string;
+  stops: RouteStop_Input[];
+  start_time: string;
+  end_time: string;
+  notes?: string | null;
+};
 
 export type RebroadcastResult = {
   farmers_notified: number;
@@ -78,7 +104,7 @@ export const api = {
     http<FarmerNotification[]>(`/api/farmers/${farmerId}/notifications`),
   listRoutes: (hubId?: string) =>
     http<RouteRow[]>(hubId ? `/api/routes?hub_id=${hubId}` : "/api/routes"),
-  createRoute: (payload: Record<string, unknown>) =>
+  createRoute: (payload: RouteCreatePayload) =>
     http<RouteRow>("/api/routes", {
       method: "POST",
       headers: { "content-type": "application/json" },

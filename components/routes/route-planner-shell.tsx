@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type RebroadcastResult } from "@/lib/api/client";
+import { api, type RebroadcastResult, type RouteCreatePayload } from "@/lib/api/client";
 import { RouteList } from "./route-list";
 import { RouteMap } from "./route-map";
 import { RouteEditor, type EditorSubmit } from "./route-editor";
@@ -36,7 +36,7 @@ export function RoutePlannerShell({ hubId }: Props) {
   });
 
   const createMut = useMutation({
-    mutationFn: async (payload: Record<string, unknown>) => {
+    mutationFn: async (payload: RouteCreatePayload) => {
       const created = await api.createRoute({ ...payload, hub_id: hubId });
       await api.publishRoute(created.id);
       return created;

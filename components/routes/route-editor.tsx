@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import type { RouteRow, RouteUpdatePayload, RebroadcastResult } from "@/lib/api/client";
+import type { RouteRow, RouteUpdatePayload, RouteCreatePayload, RebroadcastResult } from "@/lib/api/client";
 import type { DriverSummary } from "@/lib/api/client";
 
 export type EditorSubmit =
   | { mode: "update"; id: string; payload: RouteUpdatePayload }
-  | { mode: "create"; payload: Record<string, unknown> };
+  | { mode: "create"; payload: RouteCreatePayload };
 
 type Props = {
   mode: "empty" | "view" | "create";
@@ -83,7 +83,7 @@ export function RouteEditor(props: Props) {
 
   if (mode === "empty") {
     return (
-      <aside className="flex h-full w-[380px] items-center justify-center border-l border-stone-200 bg-white p-6 text-sm text-stone-500">
+      <aside className="flex h-full w-[340px] flex-shrink-0 items-center justify-center border-l border-stone-200 bg-white p-6 text-sm text-stone-500">
         Select a route or create a new one.
       </aside>
     );
@@ -94,16 +94,15 @@ export function RouteEditor(props: Props) {
       onSubmit({
         mode: "create",
         payload: {
+          hub_id: "",
           title: form.title,
           driver_id: form.driver_id,
-          start_lat: Number(form.start_lat),
-          start_lng: Number(form.start_lng),
-          end_lat: Number(form.end_lat),
-          end_lng: Number(form.end_lng),
+          start_address: form.start_lat ? String(form.start_lat) : "",
+          end_address: form.end_lat ? String(form.end_lat) : "",
+          stops: [],
           start_time: fromLocalInput(form.start_time),
           end_time: fromLocalInput(form.end_time),
           notes: form.notes || null,
-          route_polyline: "placeholder",
         },
       });
       return;
@@ -111,10 +110,9 @@ export function RouteEditor(props: Props) {
     if (!route) return;
     const payload: RouteUpdatePayload = {
       title: form.title,
-      start_lat: Number(form.start_lat),
-      start_lng: Number(form.start_lng),
-      end_lat: Number(form.end_lat),
-      end_lng: Number(form.end_lng),
+      start_address: form.start_lat ? String(form.start_lat) : "",
+      end_address: form.end_lat ? String(form.end_lat) : "",
+      stops: [],
       start_time: fromLocalInput(form.start_time),
       end_time: fromLocalInput(form.end_time),
       notes: form.notes || null,
@@ -127,7 +125,7 @@ export function RouteEditor(props: Props) {
     setForm((s) => ({ ...s, [k]: e.target.value }));
 
   return (
-    <aside className="flex h-full w-[380px] flex-col overflow-y-auto border-l border-stone-200 bg-white p-5">
+    <aside className="flex h-full w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-stone-200 bg-white p-5">
       <header className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900">
           {mode === "create" ? "New route" : "Edit route"}
