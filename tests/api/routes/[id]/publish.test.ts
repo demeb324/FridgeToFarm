@@ -13,7 +13,9 @@ const supabase = createClient<Database>(
 );
 
 const TEST_TAG = `itest-${Date.now()}`;
-const ALBUQUERQUE_LAT = 35.0844;
+// Offset ~20mi south of ABQ to keep the seeded Demo Farmer (35.0894, -106.6454)
+// outside the 10mi proximity radius used by the publish RPC.
+const ALBUQUERQUE_LAT = 34.8;
 const ALBUQUERQUE_LNG = -106.6504;
 const FARMER_OFFSET = 0.005;
 
