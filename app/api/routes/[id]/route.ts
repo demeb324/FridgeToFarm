@@ -114,14 +114,20 @@ export async function PATCH(request: Request, context: RouteContext) {
       .maybeSingle();
 
     if (existingAssignment) {
-      await supabase
+      const { error: assignUpdateError } = await supabase
         .from("route_assignments")
         .update({ driver_id: driverId })
         .eq("id", existingAssignment.id);
+      if (assignUpdateError) {
+        return NextResponse.json({ error: assignUpdateError.message }, { status: 500 });
+      }
     } else {
-      await supabase
+      const { error: assignInsertError } = await supabase
         .from("route_assignments")
         .insert({ route_id: id, driver_id: driverId, status: "assigned" });
+      if (assignInsertError) {
+        return NextResponse.json({ error: assignInsertError.message }, { status: 500 });
+      }
     }
   }
 

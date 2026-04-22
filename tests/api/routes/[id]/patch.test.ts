@@ -15,7 +15,7 @@ const supabase = createClient<Database>(
 const TEST_TAG = `itest-patch-${Date.now()}`;
 const ABQ_LAT = 35.0844;
 const ABQ_LNG = -106.6504;
-const TEST_FARMER_PHONE = "+15052267853";
+const TEST_FARMER_PHONE = `+1505${String(Date.now()).slice(-7)}`;
 
 const createdHubIds: string[] = [];
 const createdDriverIds: string[] = [];
