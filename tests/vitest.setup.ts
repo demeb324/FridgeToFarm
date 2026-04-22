@@ -31,3 +31,52 @@ vi.mock("twilio", () => {
 
   return { Twilio: TwilioMock, default: TwilioMock };
 });
+
+// ---------------------------------------------------------------------------
+// Google Maps API network guard
+// ---------------------------------------------------------------------------
+// Intercept any fetch call to maps.googleapis.com and return a minimal valid
+// response. Individual test files that need specific payloads should install
+// their own vi.stubGlobal("fetch", mockFn) BEFORE importing the module under
+// test — that override takes precedence.
+//
+// This guard prevents accidents when new service modules are tested without
+// an explicit fetch mock.
+// ---------------------------------------------------------------------------
+const _realFetch = globalThis.fetch;
+
+vi.stubGlobal(
+  "fetch",
+  vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+
+    if (typeof url === "string" && url.includes("maps.googleapis.com")) {
+      // Determine which API is being called and return a minimal valid stub.
+      if (url.includes("/geocode/")) {
+        return new Response(
+          JSON.stringify({
+            status: "OK",
+            results: [{ geometry: { location: { lat: 35.0844, lng: -106.6504 } } }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (url.includes("/directions/")) {
+        return new Response(
+          JSON.stringify({
+            status: "OK",
+            routes: [{ overview_polyline: { points: "mock_polyline_stub" } }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      // Unknown Google endpoint — fail loudly so tests don't silently pass.
+      throw new Error(
+        `[vitest.setup] Unmocked Google Maps fetch intercepted: ${url.slice(0, 120)}`,
+      );
+    }
+
+    // All non-Google fetches pass through to the real implementation.
+    return _realFetch(input, init);
+  }),
+);
