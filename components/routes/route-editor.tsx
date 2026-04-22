@@ -17,17 +17,19 @@ type Props = {
   busy: boolean;
   lastRebroadcast?: RebroadcastResult | null;
   errorMessage?: string | null;
+  fieldError?: { field: string; message: string } | null;
 };
+
+type StopInput = { address: string; name: string };
 
 type FormState = {
   title: string;
   driver_id: string;
   start_time: string;
   end_time: string;
-  start_lat: string;
-  start_lng: string;
-  end_lat: string;
-  end_lng: string;
+  start_address: string;
+  end_address: string;
+  stops: StopInput[];
   notes: string;
 };
 
@@ -45,7 +47,7 @@ function fromLocalInput(v: string): string {
 
 function emptyState(): FormState {
   return { title: "", driver_id: "", start_time: "", end_time: "",
-           start_lat: "", start_lng: "", end_lat: "", end_lng: "", notes: "" };
+           start_address: "", end_address: "", stops: [], notes: "" };
 }
 
 function stateFromRoute(r: RouteRow, driverId: string): FormState {
@@ -54,16 +56,15 @@ function stateFromRoute(r: RouteRow, driverId: string): FormState {
     driver_id: driverId,
     start_time: toLocalInput(r.start_time),
     end_time: toLocalInput(r.end_time),
-    start_lat: String(r.start_lat),
-    start_lng: String(r.start_lng),
-    end_lat: String(r.end_lat),
-    end_lng: String(r.end_lng),
+    start_address: r.start_address,
+    end_address: r.end_address,
+    stops: r.stops.map((s) => ({ address: s.address, name: s.name ?? "" })),
     notes: r.notes ?? "",
   };
 }
 
 export function RouteEditor(props: Props) {
-  const { mode, route, drivers, onSubmit, onDelete, onCancel, busy, lastRebroadcast, errorMessage } = props;
+  const { mode, route, drivers, onSubmit, onDelete, onCancel, busy, lastRebroadcast, errorMessage, fieldError } = props;
 
   const initial = useMemo(() => {
     if (mode === "view" && route) return stateFromRoute(route, "");
@@ -94,12 +95,12 @@ export function RouteEditor(props: Props) {
       onSubmit({
         mode: "create",
         payload: {
-          hub_id: "",
+          hub_id: route?.hub_id ?? "",
           title: form.title,
           driver_id: form.driver_id,
-          start_address: form.start_lat ? String(form.start_lat) : "",
-          end_address: form.end_lat ? String(form.end_lat) : "",
-          stops: [],
+          start_address: form.start_address,
+          end_address: form.end_address,
+          stops: form.stops.map((s) => ({ address: s.address, name: s.name || null })),
           start_time: fromLocalInput(form.start_time),
           end_time: fromLocalInput(form.end_time),
           notes: form.notes || null,
@@ -110,9 +111,9 @@ export function RouteEditor(props: Props) {
     if (!route) return;
     const payload: RouteUpdatePayload = {
       title: form.title,
-      start_address: form.start_lat ? String(form.start_lat) : "",
-      end_address: form.end_lat ? String(form.end_lat) : "",
-      stops: [],
+      start_address: form.start_address,
+      end_address: form.end_address,
+      stops: form.stops.map((s) => ({ address: s.address, name: s.name || null })),
       start_time: fromLocalInput(form.start_time),
       end_time: fromLocalInput(form.end_time),
       notes: form.notes || null,
@@ -120,6 +121,23 @@ export function RouteEditor(props: Props) {
     if (form.driver_id) payload.driver_id = form.driver_id;
     onSubmit({ mode: "update", id: route.id, payload });
   };
+
+  const addStop = () => setForm((s) => ({ ...s, stops: [...s.stops, { address: "", name: "" }] }));
+  const removeStop = (i: number) => setForm((s) => ({ ...s, stops: s.stops.filter((_, idx) => idx !== i) }));
+  const moveStopUp = (i: number) => setForm((s) => {
+    if (i === 0) return s;
+    const stops = [...s.stops];
+    [stops[i - 1], stops[i]] = [stops[i], stops[i - 1]];
+    return { ...s, stops };
+  });
+  const moveStopDown = (i: number) => setForm((s) => {
+    if (i >= s.stops.length - 1) return s;
+    const stops = [...s.stops];
+    [stops[i], stops[i + 1]] = [stops[i + 1], stops[i]];
+    return { ...s, stops };
+  });
+  const updateStop = (i: number, field: "address" | "name", value: string) =>
+    setForm((s) => ({ ...s, stops: s.stops.map((st, idx) => idx === i ? { ...st, [field]: value } : st) }));
 
   const set = <K extends keyof FormState>(k: K) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((s) => ({ ...s, [k]: e.target.value }));
@@ -169,27 +187,59 @@ export function RouteEditor(props: Props) {
         </label>
       </div>
 
-      <div className="mb-3 grid grid-cols-2 gap-3">
-        <label className="text-xs font-semibold uppercase tracking-wide text-stone-600">
-          Start lat
-          <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
-                 value={form.start_lat} onChange={set("start_lat")} />
-        </label>
-        <label className="text-xs font-semibold uppercase tracking-wide text-stone-600">
-          Start lng
-          <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
-                 value={form.start_lng} onChange={set("start_lng")} />
-        </label>
-        <label className="text-xs font-semibold uppercase tracking-wide text-stone-600">
-          End lat
-          <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
-                 value={form.end_lat} onChange={set("end_lat")} />
-        </label>
-        <label className="text-xs font-semibold uppercase tracking-wide text-stone-600">
-          End lng
-          <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
-                 value={form.end_lng} onChange={set("end_lng")} />
-        </label>
+      <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-stone-600">
+        Origin address
+        <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+               value={form.start_address} onChange={set("start_address")}
+               placeholder="123 Main St, City, State" />
+        {fieldError?.field === "start_address" && (
+          <span className="mt-1 block text-xs text-red-600">{fieldError.message}</span>
+        )}
+      </label>
+
+      <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-stone-600">
+        Destination address
+        <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+               value={form.end_address} onChange={set("end_address")}
+               placeholder="456 Oak Ave, City, State" />
+        {fieldError?.field === "end_address" && (
+          <span className="mt-1 block text-xs text-red-600">{fieldError.message}</span>
+        )}
+      </label>
+
+      <div className="mb-3">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wide text-stone-600">Stops</span>
+          <button type="button" onClick={addStop}
+                  className="rounded border border-stone-300 px-2 py-0.5 text-xs text-stone-700">
+            + Add stop
+          </button>
+        </div>
+        {form.stops.map((stop, i) => (
+          <div key={i} className="mb-2 flex gap-1 items-start">
+            <div className="flex flex-col gap-0.5">
+              <button type="button" disabled={i === 0} onClick={() => moveStopUp(i)}
+                      className="rounded border px-1 text-xs disabled:opacity-30">↑</button>
+              <button type="button" disabled={i === form.stops.length - 1} onClick={() => moveStopDown(i)}
+                      className="rounded border px-1 text-xs disabled:opacity-30">↓</button>
+            </div>
+            <div className="flex-1 space-y-1">
+              <input className="w-full rounded border border-stone-300 px-2 py-1 text-sm"
+                     placeholder="Stop address"
+                     value={stop.address}
+                     onChange={(e) => updateStop(i, "address", e.target.value)} />
+              <input className="w-full rounded border border-stone-300 px-2 py-1 text-sm"
+                     placeholder="Stop name (optional)"
+                     value={stop.name}
+                     onChange={(e) => updateStop(i, "name", e.target.value)} />
+              {fieldError?.field === `stops[${i}].address` && (
+                <span className="block text-xs text-red-600">{fieldError.message}</span>
+              )}
+            </div>
+            <button type="button" onClick={() => removeStop(i)}
+                    className="mt-1 rounded border border-red-200 px-1.5 py-0.5 text-xs text-red-600">×</button>
+          </div>
+        ))}
       </div>
 
       <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-stone-600">

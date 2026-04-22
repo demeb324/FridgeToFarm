@@ -14,6 +14,7 @@ export function RoutePlannerShell({ hubId }: Props) {
   const [mode, setMode] = useState<"view" | "create">("view");
   const [rebroadcast, setRebroadcast] = useState<RebroadcastResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<{ field: string; message: string } | null>(null);
 
   const routesQ = useQuery({ queryKey: ["routes", hubId], queryFn: () => api.listRoutes(hubId) });
   const driversQ = useQuery({ queryKey: ["drivers", hubId], queryFn: () => api.listDrivers(hubId) });
@@ -30,9 +31,13 @@ export function RoutePlannerShell({ hubId }: Props) {
     onSuccess: (res) => {
       setRebroadcast(res.rebroadcast ?? null);
       setErrorMsg(null);
+      setFieldError(null);
       invalidate();
     },
-    onError: (e: unknown) => setErrorMsg(e instanceof Error ? e.message : "Update failed"),
+    onError: (e: unknown) => {
+      setErrorMsg(e instanceof Error ? e.message : "Update failed");
+      setFieldError(e instanceof Error && "field" in e ? { field: (e as Error & { field?: string }).field!, message: e.message } : null);
+    },
   });
 
   const createMut = useMutation({
@@ -43,11 +48,15 @@ export function RoutePlannerShell({ hubId }: Props) {
     },
     onSuccess: async (created) => {
       setErrorMsg(null);
+      setFieldError(null);
       await invalidate();
       setMode("view");
       setSelectedId(created.id);
     },
-    onError: (e: unknown) => setErrorMsg(e instanceof Error ? e.message : "Create failed"),
+    onError: (e: unknown) => {
+      setErrorMsg(e instanceof Error ? e.message : "Create failed");
+      setFieldError(e instanceof Error && "field" in e ? { field: (e as Error & { field?: string }).field!, message: e.message } : null);
+    },
   });
 
   const deleteMut = useMutation({
@@ -66,6 +75,7 @@ export function RoutePlannerShell({ hubId }: Props) {
     setSelectedId(id);
     setRebroadcast(null);
     setErrorMsg(null);
+    setFieldError(null);
   };
 
   const handleCreateNew = () => {
@@ -73,6 +83,7 @@ export function RoutePlannerShell({ hubId }: Props) {
     setSelectedId(null);
     setRebroadcast(null);
     setErrorMsg(null);
+    setFieldError(null);
   };
 
   const handleSubmit = (submit: EditorSubmit) => {
@@ -90,6 +101,7 @@ export function RoutePlannerShell({ hubId }: Props) {
       // leaving create mode with nothing selected → empty
     }
     setErrorMsg(null);
+    setFieldError(null);
     setRebroadcast(null);
   };
 
@@ -132,6 +144,7 @@ export function RoutePlannerShell({ hubId }: Props) {
         busy={updateMut.isPending || createMut.isPending || deleteMut.isPending}
         lastRebroadcast={rebroadcast}
         errorMessage={errorMsg}
+        fieldError={fieldError}
       />
     </div>
   );
