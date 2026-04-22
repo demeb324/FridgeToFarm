@@ -2,14 +2,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { DriverDashboard } from "@/components/driver-dashboard";
 import { Navbar } from "@/components/navbar";
 import { api } from "@/lib/api/client";
+import { DEMO_DRIVER_ID } from "@/lib/config/demo";
 
 function DriverPageInner() {
-  const driverId = useSearchParams().get("id") ?? "";
+  const driverId = DEMO_DRIVER_ID;
 
   const driversQ = useQuery({
     queryKey: ["drivers"],
@@ -18,12 +17,7 @@ function DriverPageInner() {
   const assignmentsQ = useQuery({
     queryKey: ["assignments", driverId],
     queryFn: () => api.listAssignments(driverId),
-    enabled: !!driverId,
   });
-
-  if (!driverId) {
-    return <p className="text-sm text-slate-700">Add <code>?id=&lt;driver-uuid&gt;</code> to the URL.</p>;
-  }
 
   const driver = driversQ.data?.find((d) => d.id === driverId);
   if (driversQ.isLoading || assignmentsQ.isLoading) return <p className="text-sm">Loading…</p>;
@@ -61,9 +55,7 @@ export default function DriverPage() {
     <div className="min-h-screen bg-stone-100">
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <Suspense fallback={<p className="text-sm">Loading…</p>}>
-          <DriverPageInner />
-        </Suspense>
+        <DriverPageInner />
       </main>
     </div>
   );

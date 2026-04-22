@@ -2,16 +2,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { HubDashboardShell } from "@/components/hub-dashboard-shell";
 import { Navbar } from "@/components/navbar";
 import { api } from "@/lib/api/client";
-
-const DEFAULT_HUB_ID = "1e53e9e8-11db-4012-9451-f996632cd250";
+import { DEMO_HUB_ID } from "@/lib/config/demo";
 
 function HubPageInner() {
-  const hubId = useSearchParams().get("id") ?? DEFAULT_HUB_ID;
+  const hubId = DEMO_HUB_ID;
   const statsQ = useQuery({ queryKey: ["hubStats", hubId], queryFn: () => api.hubStats(hubId) });
   const routesQ = useQuery({ queryKey: ["routes", hubId], queryFn: () => api.listRoutes(hubId) });
 
@@ -45,9 +42,7 @@ export default function HubDashboardPage() {
     <div className="min-h-screen bg-slate-100">
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <Suspense fallback={<p className="text-sm">Loading…</p>}>
-          <HubPageInner />
-        </Suspense>
+        <HubPageInner />
       </main>
     </div>
   );

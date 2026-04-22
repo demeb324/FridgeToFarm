@@ -2,40 +2,27 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { FarmerOpportunityCard } from "@/components/farmer-opportunity-card";
 import { LoadCapacityEstimator } from "@/components/load-capacity-estimator";
 import { Navbar } from "@/components/navbar";
 import { NotificationCard } from "@/components/notification-card";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { api } from "@/lib/api/client";
+import { DEMO_FARMER_ID } from "@/lib/config/demo";
 import type { PickupOpportunity } from "@/lib/types";
 
 function FarmerDashboard() {
-  const farmerId = useSearchParams().get("id") ?? "";
+  const farmerId = DEMO_FARMER_ID;
 
   const opportunitiesQ = useQuery({
     queryKey: ["opportunities", farmerId],
     queryFn: () => api.listOpportunities(farmerId),
-    enabled: !!farmerId,
   });
 
   const notificationsQ = useQuery({
     queryKey: ["notifications", farmerId],
     queryFn: () => api.listNotifications(farmerId),
-    enabled: !!farmerId,
   });
-
-  if (!farmerId) {
-    return (
-      <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-700">
-          Add <code>?id=&lt;farmer-uuid&gt;</code> to the URL to view a farmer dashboard.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -129,9 +116,7 @@ export default function FarmerDashboardPage() {
               { href: "/auth/sign-in", label: "Sign in" },
             ]}
           />
-          <Suspense fallback={<p className="text-sm text-slate-600">Loading…</p>}>
-            <FarmerDashboard />
-          </Suspense>
+          <FarmerDashboard />
         </div>
       </main>
     </div>
