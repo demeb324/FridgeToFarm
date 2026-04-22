@@ -288,6 +288,8 @@ export type Database = {
           end_lng: number
           end_time: string
           hub_id: string
+          start_address: string
+          end_address: string
           id: string
           notes: string | null
           published: boolean
@@ -303,6 +305,8 @@ export type Database = {
           end_lng: number
           end_time: string
           hub_id: string
+          start_address: string
+          end_address: string
           id?: string
           notes?: string | null
           published?: boolean
@@ -318,6 +322,8 @@ export type Database = {
           end_lng?: number
           end_time?: string
           hub_id?: string
+          start_address?: string
+          end_address?: string
           id?: string
           notes?: string | null
           published?: boolean
@@ -333,6 +339,50 @@ export type Database = {
             columns: ["hub_id"]
             isOneToOne: false
             referencedRelation: "hubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_stops: {
+        Row: {
+          id: string
+          route_id: string
+          order_index: number
+          address: string
+          name: string | null
+          latitude: number
+          longitude: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          route_id: string
+          order_index: number
+          address: string
+          name?: string | null
+          latitude: number
+          longitude: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          route_id?: string
+          order_index?: number
+          address?: string
+          name?: string | null
+          latitude?: number
+          longitude?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
             referencedColumns: ["id"]
           },
         ]
