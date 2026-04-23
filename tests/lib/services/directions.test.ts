@@ -8,8 +8,7 @@ import { getDirectionsPolyline, DirectionsError } from "@/lib/services/direction
 const ENCODED = "gxztEfauiS_fake_polyline_";
 
 const OK_RESPONSE = {
-  status: "OK",
-  routes: [{ overview_polyline: { points: ENCODED } }],
+  routes: [{ polyline: { encodedPolyline: ENCODED } }],
 };
 
 function makeResponse(body: unknown, ok = true, status = 200) {
@@ -30,30 +29,35 @@ beforeEach(() => {
 });
 
 describe("getDirectionsPolyline", () => {
-  it("returns the overview_polyline.points string", async () => {
+  it("returns the encodedPolyline string", async () => {
     mockFetch.mockReturnValue(makeResponse(OK_RESPONSE));
     const poly = await getDirectionsPolyline(ORIGIN, DEST, []);
     expect(poly).toBe(ENCODED);
   });
 
-  it("includes origin, destination, and waypoints in the URL", async () => {
+  it("POSTs to routes.googleapis.com with key header, field mask, and intermediates", async () => {
     mockFetch.mockReturnValue(makeResponse(OK_RESPONSE));
     await getDirectionsPolyline(ORIGIN, DEST, [WP]);
-    const url: string = mockFetch.mock.calls[0][0];
-    expect(url).toContain("maps.googleapis.com/maps/api/directions");
-    expect(url).toContain("origin=");
-    expect(url).toContain("destination=");
-    expect(url).toContain("waypoints=");
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://routes.googleapis.com/directions/v2:computeRoutes");
+    expect(init.method).toBe("POST");
+    const headers = init.headers as Record<string, string>;
+    expect(headers["X-Goog-Api-Key"]).toBe("test-server-key");
+    expect(headers["X-Goog-FieldMask"]).toBe("routes.polyline.encodedPolyline");
+    const body = JSON.parse(init.body as string);
+    expect(body.origin.location.latLng).toEqual({ latitude: ORIGIN.lat, longitude: ORIGIN.lng });
+    expect(body.destination.location.latLng).toEqual({ latitude: DEST.lat, longitude: DEST.lng });
+    expect(body.intermediates).toHaveLength(1);
+    expect(body.intermediates[0].location.latLng).toEqual({ latitude: WP.lat, longitude: WP.lng });
+    expect(body.travelMode).toBe("DRIVE");
+    expect(body.polylineEncoding).toBe("ENCODED_POLYLINE");
   });
 
   it("works with zero waypoints", async () => {
     mockFetch.mockReturnValue(makeResponse(OK_RESPONSE));
     await expect(getDirectionsPolyline(ORIGIN, DEST, [])).resolves.toBe(ENCODED);
-  });
-
-  it("throws DirectionsError when status is NOT_FOUND", async () => {
-    mockFetch.mockReturnValue(makeResponse({ status: "NOT_FOUND", routes: [] }));
-    await expect(getDirectionsPolyline(ORIGIN, DEST, [])).rejects.toBeInstanceOf(DirectionsError);
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.intermediates).toEqual([]);
   });
 
   it("throws DirectionsError when fetch is not ok", async () => {
@@ -62,7 +66,12 @@ describe("getDirectionsPolyline", () => {
   });
 
   it("throws DirectionsError when routes array is empty", async () => {
-    mockFetch.mockReturnValue(makeResponse({ status: "OK", routes: [] }));
+    mockFetch.mockReturnValue(makeResponse({ routes: [] }));
+    await expect(getDirectionsPolyline(ORIGIN, DEST, [])).rejects.toBeInstanceOf(DirectionsError);
+  });
+
+  it("throws DirectionsError when polyline missing", async () => {
+    mockFetch.mockReturnValue(makeResponse({ routes: [{}] }));
     await expect(getDirectionsPolyline(ORIGIN, DEST, [])).rejects.toBeInstanceOf(DirectionsError);
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import type { RouteRow, RouteUpdatePayload, RouteCreatePayload, RebroadcastResult } from "@/lib/api/client";
-import type { DriverSummary } from "@/lib/api/client";
+import type { RouteRow, RouteUpdatePayload, RouteCreatePayload, RebroadcastResult, DriverSummary, NearbyFarmer } from "@/lib/api/client";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -18,6 +18,7 @@ type Props = {
   mode: "empty" | "view" | "create";
   route?: RouteRow;
   drivers: DriverSummary[];
+  nearbyFarmers: NearbyFarmer[];
   onSubmit: (payload: EditorSubmit) => void;
   onDelete?: (id: string) => void;
   onCancel: () => void;
@@ -71,7 +72,7 @@ function stateFromRoute(r: RouteRow, driverId: string): FormState {
 }
 
 export function RouteEditor(props: Props) {
-  const { mode, route, drivers, onSubmit, onDelete, onCancel, busy, lastRebroadcast, errorMessage, fieldError } = props;
+  const { mode, route, drivers, nearbyFarmers, onSubmit, onDelete, onCancel, busy, lastRebroadcast, errorMessage, fieldError } = props;
 
   const initial = useMemo(() => {
     if (mode === "view" && route) return stateFromRoute(route, "");
@@ -79,6 +80,7 @@ export function RouteEditor(props: Props) {
   }, [mode, route]);
 
   const [form, setForm] = useState<FormState>(initial);
+  const [nearbyExpanded, setNearbyExpanded] = useState(false);
 
   useEffect(() => {
     setForm(initial);
@@ -201,9 +203,13 @@ export function RouteEditor(props: Props) {
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-[10px] font-bold text-white">A</span>
           Origin address
         </span>
-        <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
-               value={form.start_address} onChange={set("start_address")}
-               placeholder="123 Main St, City, State" />
+        <AddressAutocomplete
+          value={form.start_address}
+          onChange={(v) => setForm((s) => ({ ...s, start_address: v }))}
+          placeholder="123 Main St, City, State"
+          className="mt-1"
+          label="Origin address"
+        />
         {fieldError?.field === "start_address" && (
           <span className="mt-1 block text-xs text-red-600">{fieldError.message}</span>
         )}
@@ -214,9 +220,13 @@ export function RouteEditor(props: Props) {
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-[10px] font-bold text-white">{destLabel}</span>
           Destination address
         </span>
-        <input className="mt-1 w-full rounded border border-stone-300 px-3 py-2 text-sm"
-               value={form.end_address} onChange={set("end_address")}
-               placeholder="456 Oak Ave, City, State" />
+        <AddressAutocomplete
+          value={form.end_address}
+          onChange={(v) => setForm((s) => ({ ...s, end_address: v }))}
+          placeholder="456 Oak Ave, City, State"
+          className="mt-1"
+          label="Destination address"
+        />
         {fieldError?.field === "end_address" && (
           <span className="mt-1 block text-xs text-red-600">{fieldError.message}</span>
         )}
@@ -242,10 +252,13 @@ export function RouteEditor(props: Props) {
                         className="rounded border px-1 text-xs disabled:opacity-30">↓</button>
               </div>
               <div className="flex-1 space-y-1">
-                <input className="w-full rounded border border-stone-300 px-2 py-1 text-sm"
-                       placeholder="Stop address"
-                       value={stop.address}
-                       onChange={(e) => updateStop(i, "address", e.target.value)} />
+                <AddressAutocomplete
+                    value={stop.address}
+                    onChange={(v) => updateStop(i, "address", v)}
+                    placeholder="Stop address"
+                    className="w-full"
+                    label={`Stop ${i + 1} address`}
+                  />
                 <input className="w-full rounded border border-stone-300 px-2 py-1 text-sm"
                        placeholder="Stop name (optional)"
                        value={stop.name}
@@ -259,6 +272,39 @@ export function RouteEditor(props: Props) {
             </div>
           );
         })}
+      </div>
+
+      <div className="mb-3">
+        <button
+          type="button"
+          onClick={() => setNearbyExpanded((s) => !s)}
+          className="flex w-full items-center justify-between"
+        >
+          <span className="text-xs font-semibold uppercase tracking-wide text-stone-600">
+            Nearby Farmers ({nearbyFarmers.length})
+          </span>
+          <span className="text-xs text-stone-500">{nearbyExpanded ? "▲" : "▼"}</span>
+        </button>
+        {nearbyExpanded && (
+          <div className="mt-1 max-h-48 overflow-y-auto rounded border border-stone-200 bg-stone-50 p-2">
+            {nearbyFarmers.length === 0 ? (
+              <p className="text-xs text-stone-500">No farmers found within 10 miles</p>
+            ) : (
+              <div className="space-y-2">
+                {nearbyFarmers.map((f) => (
+                  <div key={f.farmer_id} className="rounded border border-stone-200 bg-white p-2">
+                    <div className="text-xs font-semibold text-stone-800">{f.farmer_name}</div>
+                    <div className="text-xs text-stone-600">{f.address_text}</div>
+                    <div className="mt-1 flex justify-between text-xs">
+                      <span className="text-stone-500">{f.min_distance_miles.toFixed(1)} mi</span>
+                      <span className="text-stone-500">{f.phone}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-stone-600">

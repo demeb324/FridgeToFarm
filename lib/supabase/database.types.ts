@@ -140,6 +140,24 @@ export type Database = {
         }
         Relationships: []
       }
+      places_cache: {
+        Row: {
+          input: string
+          results: Json
+          created_at: string
+        }
+        Insert: {
+          input: string
+          results: Json
+          created_at?: string
+        }
+        Update: {
+          input?: string
+          results?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       hubs: {
         Row: {
           created_at: string

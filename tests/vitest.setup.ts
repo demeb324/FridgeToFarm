@@ -61,18 +61,18 @@ vi.stubGlobal(
           { status: 200, headers: { "content-type": "application/json" } },
         );
       }
-      if (url.includes("/directions/")) {
-        return new Response(
-          JSON.stringify({
-            status: "OK",
-            routes: [{ overview_polyline: { points: "mock_polyline_stub" } }],
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
       // Unknown Google endpoint — fail loudly so tests don't silently pass.
       throw new Error(
         `[vitest.setup] Unmocked Google Maps fetch intercepted: ${url.slice(0, 120)}`,
+      );
+    }
+
+    if (typeof url === "string" && url.includes("routes.googleapis.com")) {
+      return new Response(
+        JSON.stringify({
+          routes: [{ polyline: { encodedPolyline: "mock_polyline_stub" } }],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
       );
     }
 

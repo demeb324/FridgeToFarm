@@ -7,13 +7,13 @@ export class DirectionsError extends Error {
 
 export type LatLng = { lat: number; lng: number };
 
-function latLngStr(p: LatLng): string {
-  return `${p.lat},${p.lng}`;
+function waypoint(p: LatLng) {
+  return { location: { latLng: { latitude: p.lat, longitude: p.lng } } };
 }
 
 /**
- * Calls Google Directions API and returns the encoded overview polyline.
- * Waypoints are treated as ordered intermediate stops (not optimized).
+ * Calls Google Routes API (computeRoutes) and returns the encoded overview polyline.
+ * Intermediates are ordered must-visit stops (not optimized).
  */
 export async function getDirectionsPolyline(
   origin: LatLng,
@@ -25,22 +25,27 @@ export async function getDirectionsPolyline(
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
     "";
 
-  const params = new URLSearchParams({
-    origin: latLngStr(origin),
-    destination: latLngStr(destination),
-    key: apiKey,
-  });
+  const body = {
+    origin: waypoint(origin),
+    destination: waypoint(destination),
+    intermediates: waypoints.map(waypoint),
+    travelMode: "DRIVE",
+    polylineEncoding: "ENCODED_POLYLINE",
+  };
 
-  if (waypoints.length > 0) {
-    // Use plain lat/lng (no "via:" prefix) for stops the driver must visit.
-    params.set("waypoints", waypoints.map((w) => latLngStr(w)).join("|"));
-  }
-
-  const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
+  const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
   let res: Response;
   try {
-    res = await fetch(url);
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "routes.polyline.encodedPolyline",
+      },
+      body: JSON.stringify(body),
+    });
   } catch (err) {
     throw new DirectionsError(`Network error fetching directions: ${String(err)}`);
   }
@@ -50,13 +55,13 @@ export async function getDirectionsPolyline(
   }
 
   const data = (await res.json()) as {
-    status: string;
-    routes: Array<{ overview_polyline: { points: string } }>;
+    routes?: Array<{ polyline?: { encodedPolyline?: string } }>;
   };
 
-  if (data.status !== "OK" || !data.routes[0]) {
-    throw new DirectionsError(`Directions API returned status "${data.status}"`);
+  const encoded = data.routes?.[0]?.polyline?.encodedPolyline;
+  if (!encoded) {
+    throw new DirectionsError("Routes API returned no polyline");
   }
 
-  return data.routes[0].overview_polyline.points;
+  return encoded;
 }

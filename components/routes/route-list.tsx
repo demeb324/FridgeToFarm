@@ -19,7 +19,7 @@ export function RouteList({ routes, selectedId, mode, onSelect, onCreateNew }: P
   const sorted = [...routes].sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   return (
-    <aside className="flex h-full w-[220px] flex-shrink-0 flex-col border-r border-stone-200 bg-white">
+    <aside className="flex h-full w-[320px] flex-shrink-0 flex-col border-r border-stone-200 bg-white">
       <button
         type="button"
         onClick={onCreateNew}

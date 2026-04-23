@@ -63,6 +63,7 @@ export type RouteUpdatePayload = Partial<{
   start_time: string;
   end_time: string;
   notes: string | null;
+  notify_sms: boolean;
 }>;
 
 export type RouteCreatePayload = {
@@ -75,11 +76,22 @@ export type RouteCreatePayload = {
   start_time: string;
   end_time: string;
   notes?: string | null;
+  notify_sms?: boolean;
 };
 
 export type RebroadcastResult = {
   farmers_notified: number;
   notifications: Array<{ farmer_id: string; status: "sent" | "failed" }>;
+};
+
+export type NearbyFarmer = {
+  farmer_id: string;
+  farmer_name: string;
+  phone: string;
+  address_text: string;
+  latitude: number;
+  longitude: number;
+  min_distance_miles: number;
 };
 
 export const api = {
@@ -125,4 +137,6 @@ export const api = {
       `/api/routes/${routeId}/publish`,
       { method: "PATCH" },
     ),
+  listNearbyFarmers: (routeId: string) =>
+    http<NearbyFarmer[]>(`/api/routes/${routeId}/nearby-farmers`),
 };

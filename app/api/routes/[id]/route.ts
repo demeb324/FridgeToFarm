@@ -242,10 +242,12 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: selectError?.message ?? "Route not found." }, { status: 500 });
   }
 
+  const notifySms = body.notify_sms !== false;
+
   let rebroadcast:
     | { farmers_notified: number; notifications: Array<{ farmer_id: string; status: "sent" | "failed" }> }
     | undefined;
-  if (updated.published) {
+  if (updated.published && notifySms) {
     const result = await publishRoute(id, { allowRepublish: true });
     if (result.ok) {
       rebroadcast = {
