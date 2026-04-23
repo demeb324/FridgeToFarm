@@ -5,7 +5,9 @@ async function http<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error((body as { error?: string })?.error || `Request failed (${res.status})`);
+    const err = new Error((body as { error?: string; message?: string })?.error || (body as { message?: string })?.message || `Request failed (${res.status})`);
+    (err as Error & { field?: string }).field = (body as { field?: string }).field;
+    throw err;
   }
   return res.json() as Promise<T>;
 }
@@ -19,6 +21,77 @@ export type DriverSummary = {
 export type FarmerOpportunity = {
   routeId: string; routeTitle: string; hubName: string;
   routeDate: string; pickupWindow: string; destination: string; distanceMiles: number;
+};
+
+export type RouteStop = {
+  id: string;
+  order_index: number;
+  address: string;
+  name: string | null;
+  latitude: number;
+  longitude: number;
+};
+
+export type RouteRow = {
+  id: string;
+  hub_id: string;
+  title: string;
+  start_address: string;
+  end_address: string;
+  start_lat: number;
+  start_lng: number;
+  end_lat: number;
+  end_lng: number;
+  route_polyline: string;
+  start_time: string;
+  end_time: string;
+  notes: string | null;
+  published: boolean;
+  created_at: string;
+  hubs?: { id: string; name: string; phone: string; email: string } | null;
+  route_stops: RouteStop[];
+};
+
+export type RouteStop_Input = { address: string; name?: string | null };
+
+export type RouteUpdatePayload = Partial<{
+  title: string;
+  driver_id: string;
+  start_address: string;
+  end_address: string;
+  stops: RouteStop_Input[];
+  start_time: string;
+  end_time: string;
+  notes: string | null;
+  notify_sms: boolean;
+}>;
+
+export type RouteCreatePayload = {
+  hub_id: string;
+  driver_id: string;
+  title: string;
+  start_address: string;
+  end_address: string;
+  stops: RouteStop_Input[];
+  start_time: string;
+  end_time: string;
+  notes?: string | null;
+  notify_sms?: boolean;
+};
+
+export type RebroadcastResult = {
+  farmers_notified: number;
+  notifications: Array<{ farmer_id: string; status: "sent" | "failed" }>;
+};
+
+export type NearbyFarmer = {
+  farmer_id: string;
+  farmer_name: string;
+  phone: string;
+  address_text: string;
+  latitude: number;
+  longitude: number;
+  min_distance_miles: number;
 };
 
 export const api = {
@@ -42,16 +115,28 @@ export const api = {
   listNotifications: (farmerId: string) =>
     http<FarmerNotification[]>(`/api/farmers/${farmerId}/notifications`),
   listRoutes: (hubId?: string) =>
-    http<Array<Record<string, unknown>>>(hubId ? `/api/routes?hub_id=${hubId}` : "/api/routes"),
-  createRoute: (payload: Record<string, unknown>) =>
-    http<Record<string, unknown> & { id: string }>("/api/routes", {
+    http<RouteRow[]>(hubId ? `/api/routes?hub_id=${hubId}` : "/api/routes"),
+  createRoute: (payload: RouteCreatePayload) =>
+    http<RouteRow>("/api/routes", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
+    }),
+  updateRoute: (routeId: string, payload: RouteUpdatePayload) =>
+    http<{ route: RouteRow; rebroadcast?: RebroadcastResult }>(`/api/routes/${routeId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  deleteRoute: (routeId: string) =>
+    fetch(`/api/routes/${routeId}`, { method: "DELETE" }).then((r) => {
+      if (!r.ok && r.status !== 204) throw new Error(`Delete failed (${r.status})`);
     }),
   publishRoute: (routeId: string) =>
     http<{ farmers_notified: number; notifications: Array<{ status: string }> }>(
       `/api/routes/${routeId}/publish`,
       { method: "PATCH" },
     ),
+  listNearbyFarmers: (routeId: string) =>
+    http<NearbyFarmer[]>(`/api/routes/${routeId}/nearby-farmers`),
 };

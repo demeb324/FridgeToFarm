@@ -30,7 +30,9 @@ function HubPageInner() {
       stats={statsQ.data!}
       routes={(routesQ.data as Array<{
         id: string; title: string; hubs?: { name?: string } | null;
-        start_time: string; end_time: string; start_lat: number; start_lng: number;
+        start_time: string; end_time: string;
+        start_address: string; end_address: string;
+        start_lat: number; start_lng: number;
         end_lat: number; end_lng: number; notes: string | null; published: boolean;
       }>) ?? []}
     />

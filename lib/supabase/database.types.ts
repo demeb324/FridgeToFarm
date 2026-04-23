@@ -119,6 +119,45 @@ export type Database = {
         }
         Relationships: []
       }
+      geocode_cache: {
+        Row: {
+          address: string
+          created_at: string
+          lat: number
+          lng: number
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          lat: number
+          lng: number
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          lat?: number
+          lng?: number
+        }
+        Relationships: []
+      }
+      places_cache: {
+        Row: {
+          input: string
+          results: Json
+          created_at: string
+        }
+        Insert: {
+          input: string
+          results: Json
+          created_at?: string
+        }
+        Update: {
+          input?: string
+          results?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       hubs: {
         Row: {
           created_at: string
@@ -281,9 +320,54 @@ export type Database = {
           },
         ]
       }
+      route_stops: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          name: string | null
+          order_index: number
+          route_id: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          name?: string | null
+          order_index: number
+          route_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string | null
+          order_index?: number
+          route_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routes: {
         Row: {
           created_at: string
+          end_address: string
           end_lat: number
           end_lng: number
           end_time: string
@@ -292,6 +376,7 @@ export type Database = {
           notes: string | null
           published: boolean
           route_polyline: string
+          start_address: string
           start_lat: number
           start_lng: number
           start_time: string
@@ -299,6 +384,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          end_address?: string
           end_lat: number
           end_lng: number
           end_time: string
@@ -307,6 +393,7 @@ export type Database = {
           notes?: string | null
           published?: boolean
           route_polyline?: string
+          start_address?: string
           start_lat: number
           start_lng: number
           start_time: string
@@ -314,6 +401,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          end_address?: string
           end_lat?: number
           end_lng?: number
           end_time?: string
@@ -322,6 +410,7 @@ export type Database = {
           notes?: string | null
           published?: boolean
           route_polyline?: string
+          start_address?: string
           start_lat?: number
           start_lng?: number
           start_time?: string

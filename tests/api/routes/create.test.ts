@@ -42,6 +42,7 @@ async function callPost(body: unknown) {
 }
 
 afterAll(async () => {
+  await supabase.from("route_stops").delete().in("route_id", createdRouteIds.length ? createdRouteIds : ["__none__"]);
   await supabase.from("route_assignments").delete().in("route_id", createdRouteIds.length ? createdRouteIds : ["__none__"]);
   await supabase.from("routes").delete().in("id", createdRouteIds.length ? createdRouteIds : ["__none__"]);
   await supabase.from("hubs").delete().in("id", createdHubIds.length ? createdHubIds : ["__none__"]);
@@ -59,11 +60,9 @@ describe("POST /api/routes — integration", () => {
       hub_id: hub.id,
       driver_id: SEED_DRIVER_ID,
       title: `Created Route ${TEST_TAG}`,
-      route_polyline: "test_polyline",
-      start_lat: 35.0844,
-      start_lng: -106.6504,
-      end_lat: 35.1,
-      end_lng: -106.64,
+      start_address: "400 Marquette Ave NW, Albuquerque, NM 87102",
+      end_address: "63 Lincoln Ave, Santa Fe, NM 87501",
+      stops: [],
       start_time: "2026-06-01T09:00:00Z",
       end_time: "2026-06-01T17:00:00Z",
       notes: "Created via integration test",
@@ -93,9 +92,9 @@ describe("POST /api/routes — integration", () => {
     const response = await callPost({
       hub_id: hub.id,
       title: `No Driver ${TEST_TAG}`,
-      route_polyline: "x",
-      start_lat: 35, start_lng: -106,
-      end_lat: 35.1, end_lng: -106.1,
+      start_address: "400 Marquette Ave NW, Albuquerque, NM 87102",
+      end_address: "63 Lincoln Ave, Santa Fe, NM 87501",
+      stops: [],
       start_time: "2026-06-01T09:00:00Z",
       end_time: "2026-06-01T17:00:00Z",
     });

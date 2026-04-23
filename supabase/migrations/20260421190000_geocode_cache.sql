@@ -1,0 +1,6 @@
+CREATE TABLE public.geocode_cache (
+  address TEXT PRIMARY KEY,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

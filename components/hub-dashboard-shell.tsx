@@ -14,6 +14,8 @@ export type HubRoute = {
   hubs?: { name?: string } | null;
   start_time: string;
   end_time: string;
+  start_address: string;
+  end_address: string;
   start_lat: number;
   start_lng: number;
   end_lat: number;
@@ -21,10 +23,6 @@ export type HubRoute = {
   notes: string | null;
   published: boolean;
 };
-
-function fmtCoords(lat: number, lng: number) {
-  return `${lat.toFixed(3)}, ${lng.toFixed(3)}`;
-}
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -122,7 +120,7 @@ export function HubDashboardShell({
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{route.title}</p>
                         <p className="mt-1 text-sm text-slate-600">
-                          {fmtCoords(route.start_lat, route.start_lng)} to {fmtCoords(route.end_lat, route.end_lng)}
+                          {route.start_address} to {route.end_address}
                         </p>
                       </div>
                       <StatusBadge status={routeStatus(route)} />
@@ -141,7 +139,7 @@ export function HubDashboardShell({
                 <StatusBadge status={routeStatus(selectedRoute)} />
               </div>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                {fmtCoords(selectedRoute.start_lat, selectedRoute.start_lng)} to {fmtCoords(selectedRoute.end_lat, selectedRoute.end_lng)}
+                {selectedRoute.start_address} to {selectedRoute.end_address}
               </p>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">

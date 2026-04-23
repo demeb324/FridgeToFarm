@@ -40,6 +40,7 @@ afterAll(async () => {
   await supabase.from("notification_log").delete().eq("farmer_id", farmerId);
   await supabase.from("route_responses").delete().eq("farmer_id", farmerId);
   if (routeId) {
+    await supabase.from("route_stops").delete().eq("route_id", routeId);
     await supabase.from("route_assignments").delete().eq("route_id", routeId);
     await supabase.from("routes").delete().eq("id", routeId);
   }
@@ -55,9 +56,9 @@ describe("publish flow: POST /api/routes → PATCH /api/routes/[id]/publish", ()
         hub_id: HUB_ID,
         driver_id: DRIVER_ID,
         title: `${TAG} pub-route`,
-        route_polyline: "x",
-        start_lat: 35.0844, start_lng: -106.6504,
-        end_lat: 35.09, end_lng: -106.64,
+        start_address: "400 Marquette Ave NW, Albuquerque, NM 87102",
+        end_address: "63 Lincoln Ave, Santa Fe, NM 87501",
+        stops: [],
         start_time: "2026-06-10T09:00:00Z",
         end_time: "2026-06-10T11:00:00Z",
       }),
