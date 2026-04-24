@@ -94,6 +94,31 @@ export type NearbyFarmer = {
   min_distance_miles: number;
 };
 
+export type FarmerSummary = {
+  id: string;
+  name: string;
+  phone: string;
+  address_text: string;
+  opted_out: boolean;
+  created_at: string;
+};
+
+export type FarmerDetail = FarmerSummary & {
+  latitude: number;
+  longitude: number;
+  updated_at: string;
+};
+
+export type FarmerResponseItem = {
+  id: string;
+  route_id: string;
+  route_title: string;
+  response_type: "crop_pickup" | "compost_pickup" | "both";
+  status: "pending" | "confirmed" | "cancelled";
+  notes: string | null;
+  created_at: string;
+};
+
 export const api = {
   listHubs: () => http<HubSummary[]>("/api/hubs"),
   hubStats: (hubId: string) => http<HubStats>(`/api/hubs/${hubId}/stats`),
@@ -139,4 +164,17 @@ export const api = {
     ),
   listNearbyFarmers: (routeId: string) =>
     http<NearbyFarmer[]>(`/api/routes/${routeId}/nearby-farmers`),
+
+  listFarmers: (search?: string) =>
+    http<FarmerSummary[]>(search ? `/api/farmers?search=${encodeURIComponent(search)}` : "/api/farmers"),
+
+  updateFarmer: (id: string, payload: { name?: string; phone?: string; address_text?: string; opted_out?: boolean }) =>
+    http<FarmerDetail>(`/api/farmers/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+
+  listFarmerResponses: (farmerId: string) =>
+    http<FarmerResponseItem[]>(`/api/farmers/${farmerId}/responses`),
 };
