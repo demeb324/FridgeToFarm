@@ -21,8 +21,11 @@ export function Navbar() {
           <Link href="/driver" className="text-sm font-medium text-slate-700 hover:text-slate-950">
             Driver View
           </Link>
-          <Link href="/farmer" className="text-sm font-medium text-slate-700 hover:text-slate-950">
-            Farmer View
+          <Link href="/farmers" className="text-sm font-medium text-slate-700 hover:text-slate-950">
+            Farmers
+          </Link>
+          <Link href="/register" className="text-sm font-medium text-slate-700 hover:text-slate-950">
+            Register
           </Link>
           <Link href="/hub" className="text-sm font-medium text-slate-700 hover:text-slate-950">
             Hub Dashboard
