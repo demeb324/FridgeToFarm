@@ -82,6 +82,7 @@ export async function publishRoute(
       responseUrl,
       hubPhone: hub.phone,
       hubEmail: hub.email,
+      farmerId: farmer.farmer_id,
     });
 
     const smsResult = await sendSms(farmer.phone, message);

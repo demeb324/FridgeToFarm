@@ -21,6 +21,12 @@ export async function sendSms(to: string, message: string): Promise<SmsResult> {
     return { sid: "", status: "failed", error }
   }
 
+  // SMS_DRY_RUN: skip Twilio, log to console, return mock result
+  if (process.env.SMS_DRY_RUN === "true") {
+    console.log(`[sms] DRY RUN to ${to}: ${message}`);
+    return { sid: "dry-run", status: "sent" };
+  }
+
   try {
     const client = new Twilio(accountSid, authToken)
     const result = await client.messages.create({
@@ -51,9 +57,12 @@ export function formatRouteSmsMessage(params: {
   responseUrl: string
   hubPhone: string
   hubEmail: string
+  farmerId: string
 }): string {
-  const { hubName, routeDate, responseUrl, hubPhone, hubEmail } = params
-  return `${hubName} has a delivery route near you on ${routeDate}. Tap to respond: ${responseUrl} Questions? Contact ${hubPhone} or ${hubEmail}.`
+  const { hubName, routeDate, responseUrl, hubPhone, hubEmail, farmerId } = params
+  const baseUrl = process.env.BASE_URL || "http://localhost:3000"
+  const unsubscribeUrl = `${baseUrl}/unsubscribe?farmer=${farmerId}`
+  return `${hubName} has a delivery route near you on ${routeDate}. Tap to respond: ${responseUrl} Questions? Contact ${hubPhone} or ${hubEmail}. Reply STOP or tap to unsubscribe: ${unsubscribeUrl}`
 }
 
 /**
