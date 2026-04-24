@@ -1,5 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { RespondForm } from "./respond-form";
 
 interface RespondPageProps {
   searchParams: Promise<{ route?: string; farmer?: string }>;
@@ -75,50 +76,24 @@ export default async function RespondPage({ searchParams }: RespondPageProps) {
           )}
         </div>
 
+        {/* Hub contact card — above the form per spec */}
         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Hub Contact</p>
           <p className="mt-1 text-sm text-slate-700">Phone: {hub.phone}</p>
           <p className="text-sm text-slate-700">Email: {hub.email}</p>
         </div>
 
-        <form action="/api/responses" method="POST" className="mt-6 space-y-4">
-          <input type="hidden" name="route_id" value={routeId} />
-          <input type="hidden" name="farmer_id" value={farmerId} />
-
-          <div>
-            <p className="text-sm font-medium text-slate-700">What would you like?</p>
-            <div className="mt-2 space-y-2">
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50">
-                <input type="radio" name="response_type" value="crop_pickup" required className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm text-slate-700">Crop Pickup</span>
-              </label>
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50">
-                <input type="radio" name="response_type" value="compost_pickup" className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm text-slate-700">Compost Pickup</span>
-              </label>
-              <label className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50">
-                <input type="radio" name="response_type" value="both" className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm text-slate-700">Both</span>
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Notes (optional)
-              <textarea
-                name="notes"
-                rows={3}
-                placeholder="e.g., What crops, how much compost..."
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-400"
-              />
-            </label>
-          </div>
-
-          <button type="submit" className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700">
-            Submit Response
-          </button>
-        </form>
+        <RespondForm
+          routeId={routeId}
+          farmerId={farmerId}
+          routeTitle={routeData.title}
+          hubName={hub.name}
+          hubPhone={hub.phone}
+          hubEmail={hub.email}
+          startTime={startTime}
+          endTime={endTime}
+          notes={routeData.notes}
+        />
       </div>
     </div>
   );
