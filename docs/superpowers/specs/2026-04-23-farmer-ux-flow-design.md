@@ -186,7 +186,7 @@ Reply STOP or tap to unsubscribe: {BASE_URL}/unsubscribe?farmer={farmer_id}
 
 **Security note:** The unsubscribe link uses the farmer's UUID as the identifier. UUIDs are unguessable (128-bit), so this provides adequate protection for the MVP. No additional authentication is required.
 
-**Twilio STOP handling:** Configured in Twilio console (no code). Covers farmers who reply STOP to the SMS.
+**Twilio STOP handling:** Configured in Twilio console (no code). Covers farmers who reply STOP to the SMS. Note: Twilio's STOP block operates on Twilio's side only — it does not update our `opted_out` column. The farmer won't receive messages regardless, but the support rep won't see them as opted out unless they toggle it manually or the farmer uses the unsubscribe link instead. Syncing Twilio opt-out events to our database would require an inbound webhook endpoint, which is out of scope for MVP.
 
 ---
 
