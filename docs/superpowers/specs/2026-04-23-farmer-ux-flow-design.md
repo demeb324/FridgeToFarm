@@ -251,6 +251,35 @@ export type FarmerResponseItem = {
 
 ---
 
+### 7. SMS Test UI (`/sms-test`)
+
+**Route:** `app/sms-test/page.tsx` (new file)
+
+A mock SMS inbox for development and demo use. Simulates what a farmer sees on their phone — messages listed in conversation style with clickable response links. Allows testing the full SMS → respond flow without a real phone or active Twilio credentials.
+
+**Dev-only.** This page should be excluded from production builds (guarded by `NODE_ENV !== 'production'` or omitted from the deployed app).
+
+**Layout:**
+- Dropdown to select a farmer (populated from `GET /api/farmers`)
+- Mock phone frame containing an SMS inbox view
+- Messages rendered as chat-style bubbles (green for inbound/hub, white for context)
+- Each message shows: hub name, route date, response URL (clickable), unsubscribe link (clickable), hub contact details
+- Messages are pulled from `notification_log` for the selected farmer
+
+**SMS dry-run mode:** Add `SMS_DRY_RUN` environment variable support to `backend/services/sms.ts`. When `SMS_DRY_RUN=true`:
+- `sendSms()` skips the Twilio API call entirely
+- Logs the message content to console
+- Returns `{ sid: "dry-run", status: "sent" }` — the same shape as a real send
+- The notification is still written to `notification_log` with status `sent` and `twilio_sid: "dry-run"`
+- The SMS test UI can then display these logged messages
+
+This allows the full flow — hub publishes route → proximity matching runs → messages logged → test UI shows them → click link → test `/respond` — without any external SMS cost or a real phone.
+
+**Modified file:** `backend/services/sms.ts`
+- Add dry-run check at the top of `sendSms()`: if `process.env.SMS_DRY_RUN === 'true'`, log and return early
+
+---
+
 ## File Change Summary
 
 | Action | File | Description |
@@ -259,10 +288,11 @@ export type FarmerResponseItem = {
 | New | `app/farmers/page.tsx` | Support rep farmer list with search |
 | New | `app/farmer/[id]/page.tsx` | Support rep farmer detail view (proxy dashboard) |
 | New | `app/unsubscribe/page.tsx` | Farmer opt-out page |
+| New | `app/sms-test/page.tsx` | Dev-only mock SMS inbox for testing |
 | New | `app/api/farmers/[id]/route.ts` | `PATCH /api/farmers/:id` handler |
 | New | `app/api/farmers/[id]/responses/route.ts` | `GET /api/farmers/:id/responses` handler |
 | Modify | `app/api/farmers/route.ts` | Add `GET` handler (list with search) alongside existing `POST` |
-| Modify | `backend/services/sms.ts` | Add unsubscribe link to `formatRouteSmsMessage` |
+| Modify | `backend/services/sms.ts` | Add unsubscribe link to `formatRouteSmsMessage` + SMS_DRY_RUN support |
 | Modify | `app/respond/page.tsx` | Move hub contact above form, add submission confirmation |
 | Modify | `lib/api/client.ts` | Add farmer management API methods and types |
 | Delete | `app/farmer/page.tsx` | Replaced by dynamic `app/farmer/[id]/page.tsx` |
@@ -287,6 +317,6 @@ export type FarmerResponseItem = {
 
 - **API endpoints:** Unit tests for `GET /api/farmers`, `PATCH /api/farmers/[id]`, `GET /api/farmers/[id]/responses`
 - **Registration page:** Manual validation — register a farmer, confirm record in database, confirm geocoding
-- **SMS flow:** Manual — publish a route, confirm SMS includes unsubscribe link, confirm unsubscribe works
+- **SMS flow:** Use `/sms-test` page with `SMS_DRY_RUN=true` — publish route, see messages in mock inbox, click link to test `/respond`
 - **Proxy dashboard:** Manual — support rep views farmer, edits profile, responds on behalf
 - **Respond page:** Manual — submit response, confirm success screen appears
